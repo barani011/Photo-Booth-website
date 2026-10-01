@@ -136,41 +136,109 @@
       transform: rotate(180deg);
     }
 
-    .settings-options-menu {
+    .settings-options-panel {
       display: none;
       position: absolute;
-      top: calc(100% + 10px);
-      right: 0;
-      z-index: 20;
-      width: 210px;
-      padding: 6px;
-      border: 1px solid #454348;
-      border-radius: 8px;
-      background: #272628;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-    }
-
-    .settings-options-menu.open {
-      display: block;
-    }
-
-    .settings-options-menu button {
-      display: block;
+      top: 38px;
+      left: 0;
       width: 100%;
-      padding: 9px 10px;
+      z-index: 50;
+      padding: 22px 34px 30px;
+      border-bottom: 1px solid #323136;
+      background: #171618;
+      box-shadow: 0 18px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .settings-options-panel.open { display: block; }
+
+    .settings-panel-inner {
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    .settings-panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #2d2c31;
+    }
+
+    .settings-panel-event {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #f2f1f3;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .settings-panel-cloud { color: #aaa8ae; font-size: 18px; }
+
+    .settings-panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: #aaa8ae;
+      font-size: 13px;
+    }
+
+    .settings-panel-close {
+      width: 40px;
+      height: 40px;
       border: 0;
-      border-radius: 5px;
-      background: transparent;
-      color: #eae9eb;
-      font: inherit;
-      text-align: left;
+      border-radius: 50%;
+      background: #d82b6b;
+      color: #fff;
+      font-size: 20px;
       cursor: pointer;
     }
 
-    .settings-options-menu button:hover,
-    .settings-options-menu button:focus-visible {
-      background: #38363b;
-      outline: none;
+    .settings-panel-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 28px;
+      padding-top: 22px;
+    }
+
+    .settings-panel-column {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 13px;
+    }
+
+    .settings-panel-column h2 {
+      color: #d82b6b;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .settings-panel-column .settings-panel-label {
+      margin-top: 5px;
+      color: #858289;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .settings-panel-column a {
+      color: #d5d4d8;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .settings-panel-column a:hover { color: #fff; }
+
+    @media (max-width: 1000px) {
+      .settings-panel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      .settings-options-panel { padding: 18px 20px 24px; }
+      .settings-panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 16px; }
+      .settings-panel-actions > span { display: none; }
     }
 
     /* Main Container */
@@ -459,16 +527,46 @@
   Camera Settings
   <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
 </button>
-      <button id="settings-options-toggle" class="btn-toggle-circle" onclick="toggleSettingsOptions()" title="Open settings options" aria-label="Open settings options" aria-expanded="false" aria-haspopup="menu" aria-controls="settings-options-menu">
+      <button id="settings-options-toggle" class="btn-toggle-circle" onclick="toggleSettingsOptions()" title="Open settings options" aria-label="Open settings options" aria-expanded="false" aria-controls="settings-options-panel">
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
-      <div id="settings-options-menu" class="settings-options-menu" role="menu" aria-label="Capture settings options">
-        <button type="button" role="menuitem" onclick="focusSettingSection('photo-settings')">Photo settings</button>
-        <button type="button" role="menuitem" onclick="focusSettingSection('gif-settings')">GIF settings</button>
-        <button type="button" role="menuitem" onclick="focusSettingSection('video-settings')">Video settings</button>
-      </div>
     </div>
   </div>
+
+  <section id="settings-options-panel" class="settings-options-panel" aria-hidden="true">
+    <div class="settings-panel-inner">
+      <div class="settings-panel-top">
+        <div class="settings-panel-event"><span>wedding event</span><span class="settings-panel-cloud" aria-hidden="true">☁</span></div>
+        <div class="settings-panel-actions">
+          <span>Camera settings</span>
+          <span>Capture settings</span>
+          <button class="settings-panel-close" type="button" onclick="closeSettingsOptions()" aria-label="Close settings options">⌃</button>
+        </div>
+      </div>
+      <nav class="settings-panel-grid" aria-label="Settings navigation">
+        <div class="settings-panel-column">
+          <h2>Screen Editor</h2><span class="settings-panel-label">SETUP</span>
+          <a href="index.html">General</a><a href="capture-settings.html">Capture Settings</a><a href="camera-settings.html">Camera Settings</a><a href="#">Virtual Attendant</a>
+        </div>
+        <div class="settings-panel-column">
+          <h2>Photo Layout</h2><span class="settings-panel-label">PROCESS</span>
+          <a href="photo-layout.html">Photo Layout</a><a href="#">Effects &amp; Stickers</a><a href="#">AI Portraits</a><a href="#">Background Removal</a><a href="#">Survey</a><a href="#">Disclaimer</a>
+        </div>
+        <div class="settings-panel-column">
+          <span class="settings-panel-label">SHARING ADD-ONS</span><a href="#">Sharing Settings</a><a href="#">Print Setup</a><a href="#">Slideshow</a>
+        </div>
+        <div class="settings-panel-column">
+          <span class="settings-panel-label">EVENT</span><a href="#">Sharing Status</a><a href="#">Export Event</a><a href="#">Event folder</a>
+        </div>
+        <div class="settings-panel-column">
+          <span class="settings-panel-label">MORE</span><a href="#">Remote Control</a><a href="#">Show Lock Screen</a><a href="#">Language</a>
+        </div>
+        <div class="settings-panel-column">
+          <span class="settings-panel-label">ACCOUNT</span><a href="#">Subscribe</a><a href="#">About LumaBooth</a><a href="#">Help</a>
+        </div>
+      </nav>
+    </div>
+  </section>
 
   <main class="main-content">
     <!-- Top 4 Capture Modes Card -->
@@ -679,28 +777,26 @@
   <script>
     function toggleSettingsOptions() {
       const button = document.getElementById('settings-options-toggle');
-      const menu = document.getElementById('settings-options-menu');
-      const isOpen = menu.classList.toggle('open');
+      const panel = document.getElementById('settings-options-panel');
+      const isOpen = panel.classList.toggle('open');
       button.setAttribute('aria-expanded', String(isOpen));
+      panel.setAttribute('aria-hidden', String(!isOpen));
     }
 
-    function focusSettingSection(sectionId) {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      document.getElementById(sectionId)?.focus({ preventScroll: true });
-      document.getElementById('settings-options-menu').classList.remove('open');
+    function closeSettingsOptions() {
+      document.getElementById('settings-options-panel').classList.remove('open');
+      document.getElementById('settings-options-panel').setAttribute('aria-hidden', 'true');
       document.getElementById('settings-options-toggle').setAttribute('aria-expanded', 'false');
     }
 
     document.addEventListener('click', (event) => {
-      if (event.target.closest('#settings-options-menu, #settings-options-toggle')) return;
-      document.getElementById('settings-options-menu').classList.remove('open');
-      document.getElementById('settings-options-toggle').setAttribute('aria-expanded', 'false');
+      if (event.target.closest('#settings-options-panel, #settings-options-toggle')) return;
+      closeSettingsOptions();
     });
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
-      document.getElementById('settings-options-menu').classList.remove('open');
-      document.getElementById('settings-options-toggle').setAttribute('aria-expanded', 'false');
+      closeSettingsOptions();
     });
   </script>
 </body>
