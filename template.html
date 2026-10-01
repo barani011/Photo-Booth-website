@@ -205,6 +205,7 @@
           selectedTemplate = tpl;
           try {
             localStorage.setItem(ACTIVE_KEY, JSON.stringify(selectedTemplate));
+            localStorage.setItem(ACTIVE_ID_KEY, selectedTemplate.id);
           } catch(e) {}
           renderCarousel();
         };
@@ -221,6 +222,7 @@
       if (selectedTemplate) {
         try {
           localStorage.setItem(ACTIVE_KEY, JSON.stringify(selectedTemplate));
+          localStorage.setItem(ACTIVE_ID_KEY, selectedTemplate.id);
         } catch(e) {}
       }
       window.location.href = 'capture.html';

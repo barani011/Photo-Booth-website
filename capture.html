@@ -173,6 +173,16 @@
       line-height: 1;
     }
 
+    .shot-progress {
+      position: absolute;
+      top: 28px;
+      z-index: 2;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    }
+
     /* Camera Flash FX */
     .flash-overlay {
       position: absolute;
@@ -238,6 +248,7 @@
           r="110"
         />
       </svg>
+      <div class="shot-progress" id="shot-progress"></div>
       <div class="countdown-number" id="countdown-val">3</div>
     </div>
 
@@ -251,15 +262,38 @@
   <script>
     const video = document.getElementById('webcam-stream');
     const countdownVal = document.getElementById('countdown-val');
+    const shotProgress = document.getElementById('shot-progress');
     const progressCircle = document.getElementById('progress-circle');
     const flashScreen = document.getElementById('flash-screen');
     const canvas = document.getElementById('photo-canvas');
+    const PHOTO_DB_NAME = 'lumabooth_db';
+    const PHOTO_DB_VERSION = 2;
+    const PHOTO_ASSET_STORE = 'photo_assets';
+    const LATEST_PHOTO_ID = 'last-captured-photo';
+    const ACTIVE_KEY = 'lumabooth_active_template_v2';
+    const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
 
     const totalCircumference = 2 * Math.PI * 110; // ~691px
     progressCircle.style.strokeDasharray = `${totalCircumference} ${totalCircumference}`;
 
     let secondsLeft = 3;
     const initialSeconds = 3;
+    let shotNumbers = [1];
+    let shotIndex = 0;
+    const captureSessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    function loadShotNumbers() {
+      try {
+        const template = JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null');
+        const cameras = (template?.layers || [])
+          .filter(layer => layer.type === 'camera' && layer.visible !== false)
+          .map((layer, index) => Number(layer.cameraNumber) || index + 1)
+          .filter((cameraNumber, index, numbers) => numbers.indexOf(cameraNumber) === index)
+          .sort((first, second) => first - second);
+        if (cameras.length) shotNumbers = cameras;
+      } catch(e) {}
+      try { sessionStorage.removeItem(CAPTURE_PHOTO_IDS_KEY); } catch(e) {}
+    }
 
     // 1. Initialize Camera
     async function startCamera() {
@@ -279,6 +313,8 @@
 
     // 2. Countdown Timer Loop
     function runCountdown() {
+      shotProgress.textContent = `Photo ${shotIndex + 1} of ${shotNumbers.length}`;
+      countdownVal.textContent = secondsLeft;
       updateProgress(secondsLeft);
 
       const timer = setInterval(() => {
@@ -302,8 +338,38 @@
       progressCircle.style.strokeDashoffset = offset;
     }
 
-    // 3. Shutter Flash, Capture to Canvas, Save to sessionStorage & Redirect
-    function triggerShutterFlash() {
+    function persistCapturedPhoto(data, cameraNumber) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(PHOTO_DB_NAME, PHOTO_DB_VERSION);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('templates')) db.createObjectStore('templates', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('design_drafts')) db.createObjectStore('design_drafts', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains(PHOTO_ASSET_STORE)) db.createObjectStore(PHOTO_ASSET_STORE, { keyPath: 'id' });
+        };
+        request.onerror = () => reject(request.error || new Error('Photo database could not be opened.'));
+        request.onsuccess = () => {
+          const db = request.result;
+          const capturedAt = Date.now();
+          const photoId = `photo-${capturedAt}-${Math.random().toString(36).slice(2, 9)}`;
+          try {
+            const transaction = db.transaction(PHOTO_ASSET_STORE, 'readwrite');
+            const store = transaction.objectStore(PHOTO_ASSET_STORE);
+            store.put({ id: photoId, data, capturedAt, captureSessionId, cameraNumber });
+            store.put({ id: LATEST_PHOTO_ID, galleryRecordId: photoId, capturedAt });
+            transaction.oncomplete = () => { db.close(); resolve(photoId); };
+            transaction.onerror = () => { db.close(); reject(transaction.error || new Error('Photo could not be saved.')); };
+            transaction.onabort = () => { db.close(); reject(transaction.error || new Error('Photo save was interrupted.')); };
+          } catch(error) {
+            db.close();
+            reject(error);
+          }
+        };
+      });
+    }
+
+    // 3. Capture each numbered camera frame before opening the share page.
+    async function triggerShutterFlash() {
       flashScreen.classList.add('trigger');
 
       // Set canvas dimensions
@@ -326,24 +392,43 @@
         ctx.fillText('dslrBooth Guest Shot', canvas.width / 2, canvas.height / 2);
       }
 
-      // Convert captured photo to DataURL and save into sessionStorage
+      // Keep the latest image available to Share, and retain every capture in IndexedDB.
       const capturedPhoto = canvas.toDataURL('image/png');
-      sessionStorage.setItem('lastCapturedPhoto', capturedPhoto);
-
-      // Stop camera stream tracks to free webcam
-      if (video.srcObject) {
-        const stream = video.srcObject;
-        stream.getTracks().forEach(track => track.stop());
+      let savedPhotoId = null;
+      try {
+        savedPhotoId = await persistCapturedPhoto(capturedPhoto, shotNumbers[shotIndex]);
+      } catch(error) {
+        console.warn('Photo history could not be saved:', error);
+      }
+      if (savedPhotoId) {
+        try {
+          const photoIds = JSON.parse(sessionStorage.getItem(CAPTURE_PHOTO_IDS_KEY) || '[]');
+          photoIds.push(savedPhotoId);
+          sessionStorage.setItem(CAPTURE_PHOTO_IDS_KEY, JSON.stringify(photoIds));
+        } catch(e) {}
       }
 
-      // Briefly trigger flash and go directly to share.html
       setTimeout(() => {
         flashScreen.classList.remove('trigger');
+        shotIndex++;
+        if (shotIndex < shotNumbers.length) {
+          secondsLeft = initialSeconds;
+          document.getElementById('countdown-container').style.display = 'flex';
+          runCountdown();
+          return;
+        }
+
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+        }
         window.location.href = 'share.html';
       }, 300);
     }
 
-    window.addEventListener('DOMContentLoaded', startCamera);
+    window.addEventListener('DOMContentLoaded', () => {
+      loadShotNumbers();
+      startCamera();
+    });
   </script>
 </body>
 </html>

@@ -76,7 +76,8 @@
   <main class="flex-1 grid grid-cols-[280px_1fr_320px] h-[calc(100vh-42px)] relative p-6 overflow-hidden">
 
     <!-- Top Right 'Done' Button -->
-    <div class="absolute top-6 right-8 z-30">
+    <div class="absolute top-6 right-8 z-30 flex items-center gap-3">
+      <a href="gallery.html" class="border border-[#555159] bg-[#27252a] hover:bg-[#36333a] text-white font-semibold text-sm py-2.5 px-5 rounded-full no-underline transition-colors">Gallery</a>
       <button onclick="window.location.href='template.html'" class="bg-[#d82b6b] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3 px-16 rounded-full shadow-lg shadow-[#d82b6b]/40 cursor-pointer border-0 transition-transform">
         Done
       </button>
@@ -148,6 +149,7 @@
     const DB_VERSION = 2;
     const PHOTO_ASSET_STORE = 'photo_assets';
     const CAPTURED_PHOTO_ID = 'last-captured-photo';
+    const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
 
     function loadDatabaseRecord(storeName, key) {
       return new Promise((resolve, reject) => {
@@ -176,31 +178,42 @@
 
     async function loadShareData() {
       let savedPhoto = null;
+      const photosByCamera = new Map();
       let template = null;
+
+      try {
+        const photoIds = JSON.parse(sessionStorage.getItem(CAPTURE_PHOTO_IDS_KEY) || '[]');
+        for (const photoId of photoIds) {
+          const photoRecord = await loadDatabaseRecord(PHOTO_ASSET_STORE, photoId);
+          if (photoRecord?.data) {
+            photosByCamera.set(String(photoRecord.cameraNumber || photosByCamera.size + 1), photoRecord.data);
+          }
+        }
+      } catch(e) {}
+
       try {
         const photoRecord = await loadDatabaseRecord(PHOTO_ASSET_STORE, CAPTURED_PHOTO_ID);
-        savedPhoto = photoRecord?.data || null;
+        if (photoRecord?.galleryRecordId) {
+          const latestPhoto = await loadDatabaseRecord(PHOTO_ASSET_STORE, photoRecord.galleryRecordId);
+          savedPhoto = latestPhoto?.data || null;
+        } else {
+          savedPhoto = photoRecord?.data || null;
+        }
       } catch(e) {}
 
       if (!savedPhoto) {
         try { savedPhoto = sessionStorage.getItem('lastCapturedPhoto'); } catch(e) {}
       }
 
-      if (savedPhoto) {
-        document.getElementById('polaroid-preview-img').src = savedPhoto;
-      }
-
       try {
-        const activeId = localStorage.getItem(ACTIVE_ID_KEY);
-        if (activeId) {
-          template = await loadDatabaseRecord('templates', activeId);
-        }
+        const activeRaw = localStorage.getItem(ACTIVE_KEY);
+        if (activeRaw) template = JSON.parse(activeRaw);
       } catch(e) {}
 
       if (!template) {
         try {
-          const activeRaw = localStorage.getItem(ACTIVE_KEY);
-          if (activeRaw) template = JSON.parse(activeRaw);
+          const activeId = localStorage.getItem(ACTIVE_ID_KEY);
+          if (activeId) template = await loadDatabaseRecord('templates', activeId);
         } catch(e) {}
       }
 
@@ -212,12 +225,16 @@
         } catch(e) {}
       }
 
-      renderExactTemplate(template, savedPhoto);
+      if (savedPhoto && photosByCamera.size === 0) photosByCamera.set('1', savedPhoto);
+      const previewPhoto = photosByCamera.values().next().value || savedPhoto;
+      if (previewPhoto) document.getElementById('polaroid-preview-img').src = previewPhoto;
+
+      renderExactTemplate(template, photosByCamera);
     }
 
     window.addEventListener('DOMContentLoaded', loadShareData);
 
-    function renderExactTemplate(tpl, photoSrc) {
+    function renderExactTemplate(tpl, photosByCamera) {
       const container = document.getElementById('dynamic-rendered-strip');
       if (!tpl) {
         container.innerHTML = `<div class="p-8 text-black text-center">No template found.</div>`;
@@ -265,9 +282,9 @@
         layerEl.style.overflow = 'hidden';
 
         if (l.type === 'camera') {
-          // Camera frame slot: place the captured snapshot directly inside it!
           layerEl.style.border = '2.5px solid #ffffff';
           layerEl.style.backgroundColor = '#000000';
+          const photoSrc = photosByCamera.get(String(l.cameraNumber || 1));
 
           if (photoSrc) {
             layerEl.innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover" alt="Captured photo">`;
