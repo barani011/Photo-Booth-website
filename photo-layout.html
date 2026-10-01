@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Photo Layout</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-darkest: #0b0b0d;
+      --bg-titlebar: #121113;
+      --accent-pink: #d82b6b;
+      --accent-pink-hover: #bf205b;
+      --selection-blue: #1e75e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #121113;
+      color: #eae9eb;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #171618; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #555359; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #77757d; }
+
+    /* Canvas Items & Bounding Handles */
+    .canvas-item {
+      position: absolute;
+      box-sizing: border-box;
+      cursor: grab;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transform-origin: center center;
+    }
+    .canvas-item:active {
+      cursor: grabbing;
+    }
+
+    .selection-box-overlay {
+      position: absolute;
+      pointer-events: none;
+      z-index: 50;
+      border: 2px solid var(--accent-pink);
+      display: none;
+      transform-origin: center center;
+    }
+    .selection-box-overlay.visible { display: block; }
+
+    .handle-circle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: var(--accent-pink);
+      border: 2.5px solid #ffffff;
+      pointer-events: auto;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+      z-index: 55;
+      transform: translate(-50%, -50%);
+    }
+    .handle-tl { top: 0; left: 0; cursor: nwse-resize; }
+    .handle-tr { top: 0; left: 100%; cursor: nesw-resize; }
+    .handle-bl { top: 100%; left: 0; cursor: nesw-resize; }
+    .handle-br { top: 100%; left: 100%; cursor: nwse-resize; }
+
+    .rotate-stem {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      width: 2px;
+      height: 38px;
+      background-color: var(--accent-pink);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .rotate-handle {
+      position: absolute;
+      top: calc(100% + 38px);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--accent-pink);
+      border: 2px solid #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      pointer-events: auto;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+      z-index: 60;
+    }
+    .rotate-handle:active { cursor: grabbing; }
+
+    .custom-range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: #424047;
+      border-radius: 2px;
+      outline: none;
+    }
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid var(--accent-pink);
+      cursor: pointer;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 18px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #4a484c;
+      transition: 0.2s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--accent-pink); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+
+    #settings-dropdown-panel {
+      transform: translateY(-100%);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #settings-dropdown-panel.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="w-full h-full flex flex-col bg-[#121113] text-[#eae9eb]">
+
+  <!-- TOP SYSTEM WINDOW BAR -->
+  <header class="h-[38px] bg-[#121113] border-b border-[#232224] flex items-center justify-between px-4 text-xs z-50 shrink-0 select-none">
+    <div class="flex items-center gap-3">
+      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
+        🐾
+      </div>
+      <span class="font-medium text-[#ececec] tracking-tight">LumaBooth (dslrBooth) - Photo Layout</span>
+    </div>
+
+    <!-- Quick Navigation View Switcher -->
+    <div class="flex items-center gap-2 bg-[#201f22] p-1 rounded-lg border border-[#343338]">
+      <button class="px-3 py-1 rounded text-[11px] font-semibold bg-[#d82b6b] text-white border-0">
+        <i class="fa-solid fa-pen-ruler mr-1.5"></i> Layout Editor
+      </button>
+      <button onclick="window.location.href='template.html'" class="px-3 py-1 rounded text-[11px] font-medium text-[#a4a2a7] hover:text-white cursor-pointer bg-transparent border-0 transition">
+        <i class="fa-solid fa-shapes mr-1.5"></i> Choose Template
+      </button>
+      <button onclick="window.location.href='capture.html'" class="px-3 py-1 rounded text-[11px] font-medium text-[#a4a2a7] hover:text-white cursor-pointer bg-transparent border-0 transition">
+        <i class="fa-solid fa-camera mr-1.5"></i> Live Capture
+      </button>
+    </div>
+
+    <div class="flex items-center gap-4 text-[#928f95]">
+      <span class="hover:text-white cursor-pointer px-1 py-0.5 text-sm leading-none">—</span>
+      <span class="hover:text-white cursor-pointer px-1 py-0.5 text-xs">▢</span>
+      <span class="hover:text-rose-500 cursor-pointer px-1 py-0.5 text-sm font-semibold" onclick="window.location.href='kiosk.html'">✕</span>
+    </div>
+  </header>
+
+  <!-- ================= TOP DROP-DOWN SETTINGS PANEL ================= -->
+  <div id="settings-dropdown-panel" class="absolute top-[38px] left-0 w-full bg-[#171618] border-b border-[#323136] z-50 shadow-2xl p-6">
+    <div class="max-w-6xl mx-auto flex flex-col gap-5 relative">
+      <!-- Panel Header Bar with Back Button & Close Arrow -->
+      <div class="flex items-center justify-between pb-3 border-b border-[#2d2c31]">
+        <div class="flex items-center gap-4">
+          <button onclick="closeSettingsDropdown()" class="text-[#a4a2a7] hover:text-white flex items-center gap-2 bg-transparent border-0 cursor-pointer text-sm font-medium transition py-1 px-2 rounded hover:bg-white/5">
+            <svg class="w-4 h-4 stroke-current stroke-[2.8] fill-none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <span>Back to Editor</span>
+          </button>
+          <span class="text-[#3e3d43] font-light">|</span>
+          <span class="text-lg font-semibold text-white">wedding event</span>
+          <i class="fa-solid fa-cloud text-xs text-[#a4a2a7]"></i>
+        </div>
+
+        <div class="flex items-center gap-5 text-xs">
+          <button class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Copy link"><i class="fa-solid fa-link text-sm"></i></button>
+          <button class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Share"><i class="fa-solid fa-share-nodes text-sm"></i></button>
+          <span class="text-[#a4a2a7] flex items-center gap-2"><i class="fa-solid fa-camera"></i> USB2.0 HD UVC Web... <i class="fa-solid fa-chevron-down text-[10px]"></i></span>
+          <button class="border border-[#4c4a52] text-white px-3 py-1 rounded-full text-xs hover:border-white transition bg-transparent cursor-pointer"><i class="fa-solid fa-lock mr-1"></i> Lock</button>
+
+          <button onclick="closeSettingsDropdown()" class="w-8 h-8 rounded-full bg-[#d82b6b] hover:bg-[#bf205b] text-white flex items-center justify-center shadow-md cursor-pointer border-0 transition-transform active:scale-95 ml-2" title="Close Settings">
+            <svg class="w-4 h-4 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Settings Menu Columns -->
+      <div class="grid grid-cols-6 gap-6 text-xs">
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[#d82b6b] font-semibold text-sm">Screen Editor</span>
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-1">SETUP</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">General</a>
+          <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Capture Settings</a>
+          <a href="camera-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Camera Settings</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Virtual Attendant</a>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[#d82b6b] font-semibold text-sm">Photo Layout</span>
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-1">PROCESS</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Effects & Stickers</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">AI Portraits</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Background Removal</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Survey</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Disclaimer</a>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">SHARING ADD-ONS</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Settings</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Print Setup</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Slideshow</a>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">EVENT</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Status</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Export Event</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Event folder</a>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">MORE</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Remote Control</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Show Lock Screen</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Language</a>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">ACCOUNT</span>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Subscribe</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">About LumaBooth</a>
+          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Help <i class="fa-solid fa-chevron-down text-[9px] ml-1"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN PHOTO LAYOUT EDITOR CONTAINER -->
+  <div class="flex-1 flex flex-col overflow-hidden relative">
+
+    <!-- Secondary Nav Bar -->
+    <nav class="h-[48px] bg-[#1f1e21] border-b border-[#323135] flex items-center justify-between px-5 z-40 shrink-0 relative">
+      <button class="flex items-center gap-1.5 text-[#959398] hover:text-white text-[15px] font-medium transition cursor-pointer bg-transparent border-0" onclick="window.location.href='template.html'">
+        <svg class="w-4 h-4 stroke-current stroke-[2.4] fill-none" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Screen Editor
+      </button>
+
+      <!-- Center Template Title and Dropdown Activator -->
+      <div class="flex flex-col items-center">
+        <h1 class="text-[19px] font-semibold text-white tracking-tight leading-tight">Photo Layout</h1>
+        <button onclick="toggleTemplateDropdown()" class="flex items-center gap-1.5 text-[12px] text-[#b3b1b6] hover:text-white font-normal bg-transparent border-0 cursor-pointer transition py-0.5 px-2 rounded hover:bg-white/5">
+          <span id="active-template-title-display" class="font-medium">Untitled-1 Copy - 4 (LAPTOP-M8RRI1FC)</span>
+          <svg class="w-3.5 h-3.5 stroke-[#d82b6b] stroke-[2.5] fill-none transition-transform duration-200" id="dropdown-chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <span class="text-[#848288]" id="save-status-text" role="status" aria-live="polite">All changes saved ✓</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Save to Local Drive Button -->
+        <button onclick="exportTemplateToDrive()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow border-0" title="Save this layout as a file on your computer">
+          <i class="fa-solid fa-floppy-disk text-[11px]"></i> Save to Drive
+        </button>
+
+        <button onclick="testInChooseTemplate()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer transition shadow border-0">
+          <i class="fa-solid fa-play text-[10px]"></i> Test In Template Chooser
+        </button>
+
+        <!-- Top Right Pink Settings Toggle Button -->
+        <button id="btn-toggle-settings" onclick="toggleSettingsDropdown()" class="w-[36px] h-[36px] rounded-full bg-[#d82b6b] hover:bg-[#bf205b] active:scale-95 text-white flex items-center justify-center shadow-lg shadow-[#d82b6b]/40 transition border-0 cursor-pointer" title="Settings Options">
+          <svg id="settings-toggle-svg" class="w-[18px] h-[18px] stroke-white stroke-[2.8] fill-none transition-transform duration-300" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Actions Toolbar -->
+    <section class="h-[60px] bg-[#232225] border-b border-[#323135] flex items-center justify-between px-5 text-xs text-[#cfced2] shrink-0">
+      <div class="flex items-center gap-5">
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="addCameraSlot()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Add layout</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="window.location.href='template.html'">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span>Shop Templates</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-[#d82b6b] hover:text-pink-400 cursor-pointer bg-transparent border-0 font-medium transition" onclick="triggerSaveAsNew()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Save as New</span>
+        </button>
+        <!-- Import from local drive -->
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="document.getElementById('template-import-file').click()" title="Load a saved template from your drive">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Import</span>
+        </button>
+        <input type="file" id="template-import-file" accept=".json,.lumabooth" class="hidden" onchange="importTemplateFromDrive(event)">
+        <input type="file" id="file-upload-input" accept="image/png, image/jpeg, image/svg+xml" class="hidden" onchange="handleImageUpload(event)">
+        <!-- Export to local drive -->
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="exportTemplateToDrive()" title="Download this template to your drive">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <span>Export</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-5">
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="undoAction()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+          <span>Undo</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="redoAction()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+          <span>Redo</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="printTemplate()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Print Test Copy</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 hover:text-white cursor-pointer bg-transparent border-0 text-[#cfced2] font-medium" onclick="deleteSelectedLayer()">
+          <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Delete Template</span>
+        </button>
+      </div>
+
+      <!-- Cloud Dashboard Badge -->
+      <a href="https://fotoshare.co" target="_blank" class="bg-[#2c2b2f] hover:bg-[#343338] border border-[#434247] hover:border-[#5c5a61] px-3.5 py-1.5 rounded-lg flex items-center gap-2.5 text-white no-underline transition">
+        <div class="w-[26px] h-[26px] bg-gradient-to-tr from-[#d82b6b] to-[#e03273] rounded flex items-center justify-center shadow-sm">
+          <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <div>
+          <div class="font-semibold text-xs leading-none">LumaBooth Dashboard</div>
+          <div class="text-[10px] text-[#a4a2a7] mt-0.5 flex items-center gap-1">820+ templates online <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></div>
+        </div>
+      </a>
+    </section>
+
+    <!-- Main 3-Column Workspace -->
+    <div class="flex-1 grid grid-cols-[240px_1fr_295px] h-[calc(100vh-146px)] overflow-hidden relative">
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="bg-[#262529] border-r border-[#323135] flex flex-col overflow-y-auto py-3">
+        <div class="text-xs font-bold text-white px-4 pb-2 pt-1">Add</div>
+
+        <div class="flex flex-col border-b border-[#2e2d31] pb-2 mb-2">
+          <button onclick="addCameraSlot()" class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white border-b border-[#2d2c30] text-[13px] transition cursor-pointer bg-transparent border-0 text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              <span class="font-medium">Photo From Booth</span>
+            </div>
+          </button>
+
+          <button onclick="document.getElementById('file-upload-input').click()" class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white border-b border-[#2d2c30] text-[13px] transition cursor-pointer bg-transparent border-0 text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span class="font-medium">Image</span>
+            </div>
+          </button>
+
+          <button onclick="addTextLayer()" class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white border-b border-[#2d2c30] text-[13px] transition cursor-pointer bg-transparent border-0 text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+              <span class="font-medium">Text</span>
+            </div>
+          </button>
+
+          <button onclick="addShapeLayer()" class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white border-b border-[#2d2c30] text-[13px] transition cursor-pointer bg-transparent border-0 text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><circle cx="17.5" cy="6.5" r="3.5"></circle></svg>
+              <span class="font-medium">Shape</span>
+            </div>
+            <svg class="w-3 h-3 stroke-[#7f7d82] stroke-[2.5] fill-none" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+
+          <label class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white border-b border-[#2d2c30] text-[13px] transition cursor-pointer text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"></path><path d="m5 2 5 5"></path><path d="M2 13h15"></path></svg>
+              <span class="font-medium">Background Color</span>
+            </div>
+            <input type="color" id="bg-color-picker" value="#ffffff" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent" onchange="changeCanvasBg(this.value)">
+          </label>
+
+          <button onclick="addQrCodeLayer()" class="flex items-center justify-between px-4 py-2 text-[#d8d7da] hover:bg-[#302f34] hover:text-white text-[13px] transition cursor-pointer bg-transparent border-0 text-left">
+            <div class="flex items-center gap-3">
+              <svg class="w-[18px] h-[18px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span class="font-medium">QR Code</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Layout Settings -->
+        <div class="text-xs font-bold text-white px-4 pt-1 pb-2">Layout</div>
+        <div class="px-4 flex flex-col gap-3 text-xs">
+          <div>
+            <label class="text-[12px] text-[#b7b5ba] block mb-1 font-medium">View Dimension In</label>
+            <div class="relative">
+              <select id="select-dimension-unit" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-3 py-1.5 rounded-md text-xs outline-none cursor-pointer appearance-none">
+                <option value="Pixels">Pixels</option>
+                <option value="Inches">Inches</option>
+                <option value="Centimeters">Centimeters</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-[#888] pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[12px] text-[#b7b5ba] block mb-1 font-medium">Paper Size</label>
+            <div class="relative">
+              <select id="select-paper-size" onchange="handlePaperSizeChange(this.value)" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-3 py-1.5 rounded-md text-xs outline-none cursor-pointer appearance-none">
+                <option value="4x6">4 x 6</option>
+                <option value="2x6">2 x 6</option>
+                <option value="5x7">5 x 7</option>
+                <option value="6x8">6 x 8</option>
+                <option value="6x6">6 x 6</option>
+                <option value="8x10">8 x 10</option>
+                <option value="Custom">Custom</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-[#888] pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[12px] text-[#b7b5ba] block mb-1 font-medium">Resolution</label>
+            <div class="relative">
+              <select id="select-resolution" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-3 py-1.5 rounded-md text-xs outline-none cursor-pointer appearance-none">
+                <option value="300">300 dpi</option>
+                <option value="600">600 dpi</option>
+                <option value="150">150 dpi</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-[#888] pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[12px] text-[#b7b5ba] block mb-1 font-medium">Orientation</label>
+            <div class="relative">
+              <select id="select-orientation" onchange="handleOrientationChange(this.value)" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-3 py-1.5 rounded-md text-xs outline-none cursor-pointer appearance-none">
+                <option value="Vertical">Vertical</option>
+                <option value="Horizontal">Horizontal</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-[#888] pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1 pb-4">
+            <div>
+              <label class="text-[11px] text-[#959398] block mb-1">Width</label>
+              <input type="number" id="inp-paper-width" value="1200" oninput="handleCustomDimensionInput()" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-2.5 py-1.5 rounded text-xs outline-none focus:border-[#d82b6b]">
+            </div>
+            <div>
+              <label class="text-[11px] text-[#959398] block mb-1">Height</label>
+              <input type="number" id="inp-paper-height" value="1800" oninput="handleCustomDimensionInput()" class="w-full bg-[#1b1a1c] border border-[#434247] text-white px-2.5 py-1.5 rounded text-xs outline-none focus:border-[#d82b6b]">
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER CANVAS WORKSPACE -->
+      <section class="bg-[#383740] relative flex items-center justify-center overflow-hidden p-6 select-none" id="canvas-workspace">
+        <div id="artboard" class="bg-white relative shadow-2xl overflow-hidden" style="width: 380px; height: 570px;">
+          <!-- Live Elements Container -->
+          <div id="artboard-elements" class="absolute inset-0"></div>
+
+          <!-- Transformation Bounding Box -->
+          <div id="selection-box" class="selection-box-overlay">
+            <div class="handle-circle handle-tl" data-handle="tl"></div>
+            <div class="handle-circle handle-tr" data-handle="tr"></div>
+            <div class="handle-circle handle-bl" data-handle="bl"></div>
+            <div class="handle-circle handle-br" data-handle="br"></div>
+
+            <div class="rotate-stem"></div>
+            <div class="rotate-handle" id="rotate-handle" title="Rotate element">
+              <svg viewBox="0 0 24 24">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="absolute bottom-5 right-5 z-40 flex items-center gap-1 rounded-lg border border-[#4a484f] bg-[#212024] p-1 shadow-xl" aria-label="Canvas zoom controls">
+          <button onclick="adjustCanvasZoom(-0.1)" class="flex h-8 w-8 items-center justify-center rounded text-[#cfced2] hover:bg-[#343338] hover:text-white" title="Zoom out" aria-label="Zoom out">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <button onclick="resetCanvasZoom()" id="zoom-level-display" class="min-w-14 px-2 text-center text-xs font-medium text-white" title="Reset zoom" aria-label="Reset zoom">100%</button>
+          <button onclick="adjustCanvasZoom(0.1)" class="flex h-8 w-8 items-center justify-center rounded text-[#cfced2] hover:bg-[#343338] hover:text-white" title="Zoom in" aria-label="Zoom in">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+
+        <!-- Floating Bring Forward / Send Backward Toolbar -->
+        <div class="floating-layer-bar absolute bottom-5 left-[38%] -translate-x-1/2 bg-[#212024] border border-[#3e3d42] rounded-lg flex p-1 shadow-2xl z-30">
+          <button onclick="bringForward()" class="bg-transparent border-0 text-[#deddde] hover:bg-[#313035] hover:text-white px-3 py-1.5 rounded flex items-center gap-2 text-[11px] font-medium cursor-pointer transition">
+            <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"></rect><rect x="4" y="4" width="12" height="12" rx="2"></rect></svg>
+            Bring Forward
+          </button>
+          <button onclick="sendBackward()" class="bg-transparent border-0 text-[#deddde] hover:bg-[#313035] hover:text-white px-3 py-1.5 rounded flex items-center gap-2 text-[11px] font-medium cursor-pointer transition">
+            <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="4" y="4" width="12" height="12" rx="2"></rect><rect x="8" y="8" width="12" height="12" rx="2"></rect></svg>
+            Send Backward
+          </button>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: Inspector, Alignment, Layers -->
+      <aside class="bg-[#262529] border-l border-[#323135] flex flex-col overflow-y-auto">
+        <!-- Spacing & Spread -->
+        <div class="p-4 border-b border-[#323135] flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <input type="range" min="0" max="50" value="10" class="custom-range" id="slider-space-1">
+            <span class="text-xs text-[#a4a2a7] font-mono shrink-0 w-12 text-right">10 px</span>
+          </div>
+          <div class="text-[12px] text-[#b7b5ba] font-medium mt-1">Spread</div>
+          <div class="flex items-center justify-between gap-3">
+            <input type="range" min="0" max="60" value="20" class="custom-range" id="slider-space-2">
+            <span class="text-xs text-[#a4a2a7] font-mono shrink-0 w-12 text-right">20 px</span>
+          </div>
+        </div>
+
+        <!-- Alignment -->
+        <div class="p-4 border-b border-[#323135]">
+          <div class="flex items-center justify-between text-sm font-semibold text-white mb-3">
+            <span>Alignment</span>
+            <svg class="w-3.5 h-3.5 stroke-[#a8a6ab] stroke-[2.5] fill-none" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="alignElement('left')" title="Align Left" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="4" y1="4" x2="4" y2="20"></line><rect x="8" y="7" width="10" height="10"></rect></svg>
+            </button>
+            <button onclick="alignElement('center')" title="Align Center" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="20"></line><rect x="6" y="7" width="12" height="10"></rect></svg>
+            </button>
+            <button onclick="alignElement('right')" title="Align Right" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="20" y1="4" x2="20" y2="20"></line><rect x="6" y="7" width="10" height="10"></rect></svg>
+            </button>
+            <button onclick="alignElement('top')" title="Align Top" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="4"></line><rect x="7" y="8" width="10" height="10"></rect></svg>
+            </button>
+            <button onclick="alignElement('middle')" title="Align Middle" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"></line><rect x="7" y="6" width="10" height="12"></rect></svg>
+            </button>
+            <button onclick="alignElement('bottom')" title="Align Bottom" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="20"></line><rect x="7" y="6" width="10" height="10"></rect></svg>
+            </button>
+            <button onclick="distributeHorizontal()" title="Distribute Horizontally" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="4" y="6" width="5" height="12"></rect><rect x="15" y="6" width="5" height="12"></rect></svg>
+            </button>
+            <button onclick="distributeVertical()" title="Distribute Vertically" class="h-9 bg-[#1d1c1f] hover:bg-[#302f34] border border-[#3c3a40] rounded flex items-center justify-center text-[#cfced2] hover:text-white cursor-pointer">
+              <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="5"></rect><rect x="6" y="15" width="12" height="5"></rect></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected Inspector -->
+        <div class="p-4 border-b border-[#323135]">
+          <div class="flex items-center justify-between text-sm font-semibold text-white mb-2.5">
+            <span>Selected</span>
+            <svg class="w-3.5 h-3.5 stroke-[#a8a6ab] stroke-[2.5] fill-none" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-2.5">
+            <div class="flex items-center justify-between text-xs text-[#b2b0b5]">
+              <span>X</span>
+              <input type="number" id="inp-x" class="w-[74px] bg-[#171617] border border-[#444246] text-white px-2 py-1 rounded text-xs outline-none text-right focus:border-[#d82b6b]">
+            </div>
+            <div class="flex items-center justify-between text-xs text-[#b2b0b5]">
+              <span>Y</span>
+              <input type="number" id="inp-y" class="w-[74px] bg-[#171617] border border-[#444246] text-white px-2 py-1 rounded text-xs outline-none text-right focus:border-[#d82b6b]">
+            </div>
+            <div class="flex items-center justify-between text-xs text-[#b2b0b5]">
+              <span>W</span>
+              <input type="number" id="inp-w" class="w-[74px] bg-[#171617] border border-[#444246] text-white px-2 py-1 rounded text-xs outline-none text-right focus:border-[#d82b6b]">
+            </div>
+            <div class="flex items-center justify-between text-xs text-[#b2b0b5]">
+              <span>H</span>
+              <input type="number" id="inp-h" class="w-[74px] bg-[#171617] border border-[#444246] text-white px-2 py-1 rounded text-xs outline-none text-right focus:border-[#d82b6b]">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-[#d1cfd4] mb-2.5">
+            <span>Keep aspect ratio</span>
+            <div class="flex items-center gap-2">
+              <label class="switch">
+                <input type="checkbox" id="chk-aspect">
+                <span class="slider"></span>
+              </label>
+              <span id="aspect-label" class="text-[11px] text-[#9c9a9f] font-semibold">OFF</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-[#d1cfd4]">
+            <span>Rotate</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="inp-rotate" value="0" class="w-[58px] bg-[#171617] border border-[#444246] text-white px-2 py-1 rounded text-xs outline-none text-right focus:border-[#d82b6b]">
+              <span class="text-[#a4a2a7]">°</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layers Section -->
+        <div class="flex-1 flex flex-col min-h-[260px] overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-white border-b border-[#323135]">
+            <span>Layers</span>
+            <svg class="w-3.5 h-3.5 stroke-[#a8a6ab] stroke-[2.5] fill-none" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </div>
+          <div id="layers-list-container" class="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 bg-[#1d1c1f]"></div>
+
+          <!-- Bottom Footer -->
+          <div class="h-12 bg-[#19181a] border-t border-[#323135] flex items-center justify-around px-4 shrink-0">
+            <button id="btn-lock" onclick="toggleActiveLock()" title="Lock / Unlock Layer" class="bg-transparent border-0 text-[#c7c5ca] hover:text-white px-4 py-2 rounded cursor-pointer">
+              <svg class="w-5 h-5 stroke-current stroke-[2.2] fill-none" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </button>
+            <button onclick="duplicateActiveLayer()" title="Duplicate Layer" class="bg-transparent border-0 text-[#c7c5ca] hover:text-white px-4 py-2 rounded cursor-pointer">
+              <svg class="w-5 h-5 stroke-current stroke-[2.2] fill-none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button onclick="deleteSelectedLayer()" title="Delete Layer" class="bg-transparent border-0 text-[#c7c5ca] hover:text-white px-4 py-2 rounded cursor-pointer">
+              <svg class="w-5 h-5 stroke-current stroke-[2.2] fill-none" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="draft-recovery-modal" class="hidden fixed inset-0 z-[100] items-center justify-center bg-black/75 p-4">
+      <section class="w-full max-w-md rounded-xl border border-[#444249] bg-[#222125] p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="draft-recovery-title">
+        <h2 id="draft-recovery-title" class="text-lg font-semibold text-white">Continue your design?</h2>
+        <p id="draft-recovery-description" class="mt-2 text-sm text-[#b3b1b6]">A saved design is ready to restore.</p>
+        <div class="mt-6 flex flex-wrap justify-end gap-2">
+          <button onclick="deleteSavedDraft()" class="mr-auto rounded border border-[#70404f] px-3 py-2 text-xs text-[#f3a7bd] hover:bg-[#3b252d]">Delete Draft</button>
+          <button onclick="startNewDesign()" class="rounded border border-[#4a484f] px-3 py-2 text-xs text-white hover:bg-[#343338]">Start New Design</button>
+          <button onclick="continuePreviousDesign()" class="rounded bg-[#d82b6b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#bf205b]">Continue Previous Design</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- TEMPLATE SELECTION DROPDOWN OVERLAY CARD -->
+    <div id="template-dropdown-modal" class="hidden absolute top-[108px] left-1/2 -translate-x-1/2 w-[540px] bg-[#222125] border border-[#3b3a3f] rounded-2xl shadow-2xl z-50 p-5 flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <label class="text-xs font-semibold text-[#b8b6bb]">Name</label>
+        <input type="text" id="template-name-input" value="Untitled-1 Copy - 4" class="flex-1 bg-[#151416] border border-[#3c3a40] text-white px-3 py-1.5 rounded text-xs outline-none focus:border-[#d82b6b]">
+        <button onclick="commitTemplateNameRename()" class="px-3 py-1.5 bg-[#d82b6b] hover:bg-[#be205b] rounded text-white text-xs font-semibold cursor-pointer border-0">
+          Save
+        </button>
+        <button onclick="sortTemplateList()" class="px-2.5 py-1.5 bg-[#2a292d] hover:bg-[#343338] border border-[#3c3a40] rounded text-white text-xs cursor-pointer">
+          <i class="fa-solid fa-arrow-down-a-z"></i>
+        </button>
+      </div>
+
+      <div id="saved-templates-scroll-list" class="max-h-[350px] overflow-y-auto flex flex-col gap-2 pr-1"></div>
+
+      <div class="pt-1 flex items-center justify-between gap-3">
+        <button onclick="exportTemplateToDrive()" class="flex-1 py-2 px-4 rounded-full bg-[#2a282e] hover:bg-[#38363d] border border-[#444249] text-white text-xs font-medium flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-download text-xs text-[#d82b6b]"></i> Export to File
+        </button>
+        <button onclick="saveAndAddNewLayout()" class="flex-1 py-2 px-4 rounded-full bg-[#d82b6b] hover:bg-[#bf205b] text-white text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer border-0">
+          <i class="fa-solid fa-plus text-xs"></i> Add layout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC (INDEXEDDB POWERED + LOCAL FILE EXPORT/IMPORT) -->
+  <script>
+    const DB_NAME = 'lumabooth_db';
+    const DB_VERSION = 2;
+    const STORE_TEMPLATES = 'templates';
+    const STORE_DRAFTS = 'design_drafts';
+    const STORE_ASSETS = 'photo_assets';
+    const DRAFT_ID = 'active_design_draft';
+    const DRAFT_META_KEY = 'lumabooth_design_draft_meta_v1';
+    const EDITOR_SETTINGS_KEY = 'lumabooth_editor_settings_v1';
+    const ACTIVE_KEY = 'lumabooth_active_template_v2';
+    const ACTIVE_ID_KEY = 'lumabooth_active_template_id_v1';
+    const STORAGE_KEY = 'lumabooth_saved_templates_v2';
+
+    let dbInstance = null;
+    let savedTemplates = [];
+    let currentTemplate = null;
+    let layers = [];
+    let selectedLayerId = null;
+    let cameraCounter = 0;
+    let canvasZoom = 1;
+    let recoveredDraft = null;
+    let draftSaveTimer = null;
+    let draftRevision = 0;
+    let hasDesignDraft = false;
+    let hasPendingDraftSave = false;
+    let persistenceUnavailable = false;
+    const draftSaveWaiters = [];
+
+    const undoStack = [];
+    const redoStack = [];
+
+    // DOM Elements
+    const artboard = document.getElementById('artboard');
+    const artboardElements = document.getElementById('artboard-elements');
+    const selectionBox = document.getElementById('selection-box');
+    const rotateHandle = document.getElementById('rotate-handle');
+    const layersListContainer = document.getElementById('layers-list-container');
+    const templateDropdownModal = document.getElementById('template-dropdown-modal');
+    const savedTemplatesScrollList = document.getElementById('saved-templates-scroll-list');
+    const templateNameInput = document.getElementById('template-name-input');
+    const activeTemplateTitleDisplay = document.getElementById('active-template-title-display');
+    const saveStatusText = document.getElementById('save-status-text');
+
+    const inpX = document.getElementById('inp-x');
+    const inpY = document.getElementById('inp-y');
+    const inpW = document.getElementById('inp-w');
+    const inpH = document.getElementById('inp-h');
+    const inpRotate = document.getElementById('inp-rotate');
+    const chkAspect = document.getElementById('chk-aspect');
+    const aspectLabel = document.getElementById('aspect-label');
+    const btnLock = document.getElementById('btn-lock');
+
+    chkAspect.addEventListener('change', () => {
+      aspectLabel.textContent = chkAspect.checked ? 'ON' : 'OFF';
+      aspectLabel.style.color = chkAspect.checked ? '#d82b6b' : '#9c9a9f';
+    });
+
+    const cameraThemeColors = [
+      { bg: '#8ea352', silhouette: 'male' },
+      { bg: '#5487af', silhouette: 'female' },
+      { bg: '#e5b85a', silhouette: 'male' },
+      { bg: '#b25372', silhouette: 'female' },
+      { bg: '#489f82', silhouette: 'male' }
+    ];
+
+    /* ----------------------------------------------------
+       INDEXEDDB ENGINE (ELIMINATES 5MB CRASH COMPLETELY)
+    ---------------------------------------------------- */
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_TEMPLATES)) {
+            db.createObjectStore(STORE_TEMPLATES, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(STORE_DRAFTS)) {
+            db.createObjectStore(STORE_DRAFTS, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(STORE_ASSETS)) {
+            db.createObjectStore(STORE_ASSETS, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => {
+          dbInstance = req.result;
+          resolve(dbInstance);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveAllTemplates(templatesList) {
+      if (!dbInstance) return;
+      return new Promise((resolve, reject) => {
+        try {
+          const tx = dbInstance.transaction(STORE_TEMPLATES, 'readwrite');
+          const store = tx.objectStore(STORE_TEMPLATES);
+          store.clear();
+          templatesList.forEach(t => store.put(t));
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error || new Error('Template save failed.'));
+          tx.onabort = () => reject(tx.error || new Error('Template save was interrupted.'));
+        } catch(error) {
+          reject(error);
+        }
+      });
+    }
+
+    async function dbLoadAllTemplates() {
+      if (!dbInstance) return [];
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction(STORE_TEMPLATES, 'readonly');
+        const store = tx.objectStore(STORE_TEMPLATES);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
+      });
+    }
+
+    function dbSaveDraft(draft) {
+      return new Promise((resolve, reject) => {
+        if (!dbInstance) return reject(new Error('Design database is not open.'));
+        let tx;
+        try {
+          tx = dbInstance.transaction(STORE_DRAFTS, 'readwrite');
+          tx.objectStore(STORE_DRAFTS).put(draft);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error || new Error('Draft save failed.'));
+          tx.onabort = () => reject(tx.error || new Error('Draft save was interrupted.'));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+
+    function dbLoadDraft() {
+      return new Promise((resolve, reject) => {
+        if (!dbInstance) return reject(new Error('Design database is not open.'));
+        const tx = dbInstance.transaction(STORE_DRAFTS, 'readonly');
+        const request = tx.objectStore(STORE_DRAFTS).get(DRAFT_ID);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error('Draft could not be loaded.'));
+      });
+    }
+
+    function dbDeleteDraft() {
+      return new Promise((resolve, reject) => {
+        if (!dbInstance) return reject(new Error('Design database is not open.'));
+        const tx = dbInstance.transaction(STORE_DRAFTS, 'readwrite');
+        tx.objectStore(STORE_DRAFTS).delete(DRAFT_ID);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('Draft could not be deleted.'));
+        tx.onabort = () => reject(tx.error || new Error('Draft deletion was interrupted.'));
+      });
+    }
+
+    function dbSaveTemplateAndDraft(template, draft) {
+      return new Promise((resolve, reject) => {
+        if (!dbInstance) return reject(new Error('Design database is not open.'));
+        let tx;
+        try {
+          tx = dbInstance.transaction([STORE_TEMPLATES, STORE_DRAFTS], 'readwrite');
+          tx.objectStore(STORE_TEMPLATES).put(template);
+          tx.objectStore(STORE_DRAFTS).put(draft);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error || new Error('Design save failed.'));
+          tx.onabort = () => reject(tx.error || new Error('Design save was interrupted.'));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+
+    /* ----------------------------------------------------
+       SAVE / EXPORT TEMPLATE TO LOCAL DRIVE (.lumabooth / .json)
+    ---------------------------------------------------- */
+    async function exportTemplateToDrive() {
+      await syncCurrentTemplateObject();
+      if (!currentTemplate) return;
+
+      const exportData = {
+        app: 'LumaBooth',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        template: currentTemplate
+      };
+
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const downloadLink = document.createElement('a');
+      const filename = `${currentTemplate.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.lumabooth`;
+      downloadLink.href = url;
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+
+      alert(`Template successfully saved to your drive as "${filename}"!`);
+    }
+
+    /* ----------------------------------------------------
+       IMPORT TEMPLATE FROM LOCAL DRIVE
+    ---------------------------------------------------- */
+    function importTemplateFromDrive(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const importedTemplate = parsed.template || parsed;
+
+          if (!importedTemplate.id || !importedTemplate.layers) {
+            throw new Error("Invalid template structure.");
+          }
+
+          // Assign unique ID to avoid collision
+          importedTemplate.id = 'tpl-' + Date.now();
+          importedTemplate.title = `[Imported] ${importedTemplate.title || 'Custom Template'}`;
+
+          savedTemplates.unshift(importedTemplate);
+          currentTemplate = importedTemplate;
+
+          await saveTemplatesToStorage();
+          loadTemplateIntoEditor(importedTemplate);
+          alert(`Successfully imported "${importedTemplate.title}" into your studio!`);
+        } catch (err) {
+          alert("Error importing template file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    /* ----------------------------------------------------
+       IMAGE RESIZING & COMPRESSION ENGINE
+    ---------------------------------------------------- */
+    function loadImageElement(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function generateExactTemplateThumbnail(tpl) {
+      if (!tpl) return '';
+      const artW = tpl.artboardWidth || 380;
+      const artH = tpl.artboardHeight || 570;
+
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = 140;
+      thumbCanvas.height = Math.round(140 * (artH / artW));
+      const ctx = thumbCanvas.getContext('2d');
+      const scale = thumbCanvas.width / artW;
+
+      ctx.fillStyle = tpl.bg || '#ffffff';
+      ctx.fillRect(0, 0, thumbCanvas.width, thumbCanvas.height);
+
+      const tplLayers = tpl.layers || [];
+      for (let i = tplLayers.length - 1; i >= 0; i--) {
+        const l = tplLayers[i];
+        if (!l.visible) continue;
+
+        ctx.save();
+        const lx = l.x * scale;
+        const ly = l.y * scale;
+        const lw = l.w * scale;
+        const lh = l.h * scale;
+
+        ctx.translate(lx + lw / 2, ly + lh / 2);
+        ctx.rotate((l.rot || 0) * (Math.PI / 180));
+        ctx.translate(-lw / 2, -lh / 2);
+
+        if (l.type === 'camera') {
+          ctx.fillStyle = l.bg || '#8ea352';
+          ctx.fillRect(0, 0, lw, lh);
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#ffffff';
+          ctx.strokeRect(0, 0, lw, lh);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.max(10, Math.round(lh * 0.42))}px Inter, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(l.cameraNumber || 1), lw / 2, lh / 2);
+        } else if (l.type === 'image' && l.src) {
+          try {
+            const img = await loadImageElement(l.src);
+            if (img) ctx.drawImage(img, 0, 0, lw, lh);
+          } catch(e) {}
+        } else if (l.type === 'text') {
+          ctx.fillStyle = l.color || '#d82b6b';
+          ctx.font = `bold ${Math.max(8, Math.round((l.fontSize || 20) * scale))}px Inter, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(l.text || '', lw / 2, lh / 2);
+        }
+        ctx.restore();
+      }
+
+      return thumbCanvas.toDataURL('image/jpeg', 0.5);
+    }
+
+    async function syncCurrentTemplateObject() {
+      if (!currentTemplate) return;
+
+      captureCurrentDesignState();
+      return scheduleDraftSave();
+    }
+
+    function captureCurrentDesignState() {
+      if (!currentTemplate) return;
+      currentTemplate.layers = JSON.parse(JSON.stringify(layers));
+      currentTemplate.selectedLayerId = selectedLayerId;
+      currentTemplate.bg = artboard.style.backgroundColor || '#ffffff';
+      currentTemplate.artboardWidth = parseFloat(artboard.style.width) || 380;
+      currentTemplate.artboardHeight = parseFloat(artboard.style.height) || 570;
+      currentTemplate.paperSize = document.getElementById('select-paper-size').value;
+      currentTemplate.orientation = document.getElementById('select-orientation').value;
+      currentTemplate.resolution = document.getElementById('select-resolution').value;
+      currentTemplate.customPaperWidth = document.getElementById('inp-paper-width').value;
+      currentTemplate.customPaperHeight = document.getElementById('inp-paper-height').value;
+      currentTemplate.dimensionUnit = document.getElementById('select-dimension-unit').value;
+      currentTemplate.cameraCounter = cameraCounter;
+    }
+
+    function setSaveStatus(message, isError = false) {
+      saveStatusText.textContent = message;
+      saveStatusText.style.color = isError ? '#ff8cae' : '#a4a2a7';
+    }
+
+    function scheduleDraftSave() {
+      const revision = ++draftRevision;
+      hasDesignDraft = true;
+      hasPendingDraftSave = true;
+      setSaveStatus('Saving...');
+      clearTimeout(draftSaveTimer);
+      const savePromise = new Promise((resolve) => draftSaveWaiters.push(resolve));
+      draftSaveTimer = setTimeout(() => persistDraft(revision), 500);
+      return savePromise;
+    }
+
+    async function persistDraft(revision = draftRevision) {
+      if (!currentTemplate || revision !== draftRevision) return;
+      try {
+        try {
+          currentTemplate.thumbnailDataUri = await generateExactTemplateThumbnail(currentTemplate);
+        } catch(e) {}
+        if (revision !== draftRevision) return;
+
+        const template = JSON.parse(JSON.stringify(currentTemplate));
+        const draft = { id: DRAFT_ID, template, updatedAt: Date.now() };
+        const templateIndex = savedTemplates.findIndex((item) => item.id === template.id);
+        if (templateIndex === -1) savedTemplates.unshift(template);
+        else savedTemplates[templateIndex] = template;
+
+        await dbSaveTemplateAndDraft(template, draft);
+        persistenceUnavailable = false;
+        try {
+          localStorage.setItem(ACTIVE_ID_KEY, template.id);
+          localStorage.setItem(DRAFT_META_KEY, JSON.stringify({ id: DRAFT_ID, updatedAt: draft.updatedAt }));
+        } catch(e) {}
+
+        if (revision === draftRevision) {
+          hasPendingDraftSave = false;
+          markAsSaved();
+          while (draftSaveWaiters.length) draftSaveWaiters.shift()(true);
+        }
+      } catch(error) {
+        persistenceUnavailable = true;
+        setSaveStatus('Save failed. Check browser storage.', true);
+        while (draftSaveWaiters.length) draftSaveWaiters.shift()(false);
+      }
+    }
+
+    function flushDraftSave() {
+      clearTimeout(draftSaveTimer);
+      if (!currentTemplate || !hasDesignDraft || !hasPendingDraftSave) return;
+      try {
+        captureCurrentDesignState();
+        const template = JSON.parse(JSON.stringify(currentTemplate));
+        const updatedAt = Date.now();
+        const draft = { id: DRAFT_ID, template, updatedAt };
+        const savePromise = dbSaveTemplateAndDraft(template, draft);
+        hasPendingDraftSave = false;
+        try {
+          localStorage.setItem(ACTIVE_ID_KEY, template.id);
+          localStorage.setItem(DRAFT_META_KEY, JSON.stringify({ id: DRAFT_ID, updatedAt }));
+        } catch(e) {}
+        savePromise.then(() => { hasPendingDraftSave = false; }).catch(() => {
+          persistenceUnavailable = true;
+          setSaveStatus('Save failed. Check browser storage.', true);
+        });
+      } catch(error) {
+        persistenceUnavailable = true;
+        setSaveStatus('Save failed. Check browser storage.', true);
+      }
+    }
+
+    async function initDatabase() {
+      try {
+        await openDatabase();
+        savedTemplates = await dbLoadAllTemplates();
+      } catch(e) {
+        savedTemplates = [];
+        persistenceUnavailable = true;
+      }
+
+      try {
+        recoveredDraft = await dbLoadDraft();
+        if (!recoveredDraft?.template?.layers) recoveredDraft = null;
+      } catch(error) {
+        recoveredDraft = null;
+        persistenceUnavailable = true;
+        setSaveStatus('Draft recovery unavailable.', true);
+      }
+
+      // Check fallback localStorage if IDB was empty
+      if (!savedTemplates || savedTemplates.length === 0) {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) savedTemplates = JSON.parse(stored);
+        } catch(e) {}
+      }
+
+      // Seed default templates if completely fresh
+      if ((!savedTemplates || savedTemplates.length === 0) && !recoveredDraft) {
+        savedTemplates = [
+          {
+            id: 'tpl-1',
+            title: 'Single Top Shot Postcard (4x6)',
+            paperSize: '4x6',
+            artboardWidth: 380,
+            artboardHeight: 570,
+            bg: '#ffffff',
+            themePattern: 'plain',
+            layers: [
+              { id: 'c1', type: 'camera', name: 'Photo 1', cameraNumber: 1, x: 40, y: 30, w: 300, h: 180, rot: 0, locked: false, visible: true, bg: '#8ea352', silhouette: 'male' }
+            ]
+          },
+          {
+            id: 'tpl-2',
+            title: 'Untitled-1 Copy - 4 (LAPTOP-M8RRI1FC)',
+            paperSize: '4x6',
+            artboardWidth: 380,
+            artboardHeight: 570,
+            bg: '#ffffff',
+            themePattern: 'cells-123',
+            layers: [
+              { id: 'l1', type: 'camera', name: 'Photo 1', cameraNumber: 1, x: 48, y: 24, w: 284, h: 175, rot: 0, locked: false, visible: true, bg: '#8ea352', silhouette: 'male' },
+              { id: 'l2', type: 'camera', name: 'Photo 2', cameraNumber: 2, x: 48, y: 215, w: 284, h: 205, rot: 0, locked: false, visible: true, bg: '#5487af', silhouette: 'female' },
+              { id: 'l3', type: 'camera', name: 'Photo 3', cameraNumber: 3, x: 48, y: 436, w: 284, h: 110, rot: 0, locked: false, visible: true, bg: '#e5b85a', silhouette: 'male' }
+            ]
+          }
+        ];
+        await saveTemplatesToStorage();
+      }
+
+      if (recoveredDraft) {
+        hasDesignDraft = true;
+        const title = recoveredDraft.template.title || 'Previous design';
+        document.getElementById('draft-recovery-description').textContent = `Restore "${title}" from your last session, or start a new design.`;
+        const recoveryModal = document.getElementById('draft-recovery-modal');
+        recoveryModal.classList.remove('hidden');
+        recoveryModal.classList.add('flex');
+        return;
+      }
+
+      let activeTemplateId = null;
+      try {
+        activeTemplateId = localStorage.getItem(ACTIVE_ID_KEY);
+        if (!activeTemplateId) {
+          activeTemplateId = JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null')?.id || null;
+        }
+      } catch(e) {}
+      currentTemplate = savedTemplates.find((tpl) => tpl.id === activeTemplateId)
+        || savedTemplates[1]
+        || savedTemplates[0];
+      loadTemplateIntoEditor(currentTemplate);
+    }
+
+    function closeDraftRecovery() {
+      const recoveryModal = document.getElementById('draft-recovery-modal');
+      recoveryModal.classList.add('hidden');
+      recoveryModal.classList.remove('flex');
+    }
+
+    function continuePreviousDesign() {
+      if (!recoveredDraft?.template) return;
+      hasDesignDraft = true;
+      loadTemplateIntoEditor(recoveredDraft.template, false);
+      try {
+        localStorage.setItem(ACTIVE_ID_KEY, recoveredDraft.template.id);
+      } catch(e) {}
+      closeDraftRecovery();
+      markAsSaved();
+    }
+
+    function createNewDesignTemplate() {
+      return {
+        id: 'tpl-' + Date.now(),
+        title: 'New Design',
+        paperSize: '4x6',
+        orientation: 'Vertical',
+        resolution: '300',
+        customPaperWidth: '1200',
+        customPaperHeight: '1800',
+        dimensionUnit: 'Pixels',
+        artboardWidth: 380,
+        artboardHeight: 570,
+        bg: '#ffffff',
+        layers: []
+      };
+    }
+
+    async function startNewDesign() {
+      if (!window.confirm('Start a new design and delete the saved draft?')) return;
+      try {
+        if (recoveredDraft) await dbDeleteDraft();
+        localStorage.removeItem(DRAFT_META_KEY);
+      } catch(error) {
+        setSaveStatus('Could not delete the saved draft.', true);
+        return;
+      }
+
+      const newTemplate = createNewDesignTemplate();
+      savedTemplates.unshift(newTemplate);
+      recoveredDraft = null;
+      hasDesignDraft = false;
+      loadTemplateIntoEditor(newTemplate);
+      closeDraftRecovery();
+      await syncCurrentTemplateObject();
+    }
+
+    async function deleteSavedDraft() {
+      if (!recoveredDraft || !window.confirm('Delete this saved design draft? This cannot be undone.')) return;
+      try {
+        await dbDeleteDraft();
+        localStorage.removeItem(DRAFT_META_KEY);
+      } catch(error) {
+        setSaveStatus('Could not delete the saved draft.', true);
+        return;
+      }
+
+      const draftTemplateId = recoveredDraft.template.id;
+      recoveredDraft = null;
+      hasDesignDraft = false;
+      const fallbackTemplate = savedTemplates.find((tpl) => tpl.id !== draftTemplateId);
+      const templateToLoad = fallbackTemplate || createNewDesignTemplate();
+      if (!fallbackTemplate) savedTemplates.unshift(templateToLoad);
+      loadTemplateIntoEditor(templateToLoad);
+      closeDraftRecovery();
+    }
+
+    async function saveTemplatesToStorage() {
+      // 1. Save completely to IndexedDB without size limitations
+      try {
+        await dbSaveAllTemplates(savedTemplates);
+      } catch(e) {
+        persistenceUnavailable = true;
+        setSaveStatus('Save failed. Check browser storage.', true);
+      }
+
+      if (currentTemplate) {
+        try {
+          localStorage.setItem(ACTIVE_ID_KEY, currentTemplate.id);
+        } catch(e) {}
+      }
+
+      // 2. Mirror metadata safely to localStorage for kiosk compatibility
+      try {
+        const lightweightTemplates = savedTemplates.map(t => ({
+          ...t,
+          thumbnailDataUri: t.thumbnailDataUri ? t.thumbnailDataUri.substring(0, 1500) : ''
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lightweightTemplates));
+        if (currentTemplate) {
+          localStorage.setItem(ACTIVE_KEY, JSON.stringify(currentTemplate));
+        }
+      } catch(e) {}
+    }
+
+    function loadTemplateIntoEditor(tpl, persist = true) {
+      currentTemplate = tpl;
+      layers = JSON.parse(JSON.stringify(tpl.layers || []));
+      cameraCounter = layers.filter(l => l.type === 'camera').length;
+      selectedLayerId = layers.some((layer) => layer.id === tpl.selectedLayerId)
+        ? tpl.selectedLayerId
+        : layers[0] ? layers[0].id : null;
+
+      activeTemplateTitleDisplay.textContent = tpl.title;
+      templateNameInput.value = tpl.title.replace(/\s*\(LAPTOP-[^)]+\)/, '');
+
+      document.getElementById('select-paper-size').value = tpl.paperSize || '4x6';
+      document.getElementById('select-orientation').value = tpl.orientation
+        || (tpl.artboardWidth > tpl.artboardHeight ? 'Horizontal' : 'Vertical');
+      document.getElementById('select-resolution').value = tpl.resolution || '300';
+      document.getElementById('select-dimension-unit').value = tpl.dimensionUnit || 'Pixels';
+      document.getElementById('inp-paper-width').value = tpl.customPaperWidth || '1200';
+      document.getElementById('inp-paper-height').value = tpl.customPaperHeight || '1800';
+      artboard.style.backgroundColor = tpl.bg || '#ffffff';
+      if (tpl.artboardWidth && tpl.artboardHeight) {
+        artboard.style.width = tpl.artboardWidth + 'px';
+        artboard.style.height = tpl.artboardHeight + 'px';
+      }
+      cameraCounter = Math.max(cameraCounter, tpl.cameraCounter || cameraCounter);
+      applyCanvasZoom();
+
+      markAsSaved();
+      renderCanvasAndLayers();
+      if (persist) saveTemplatesToStorage();
+    }
+
+    /* ----------------------------------------------------
+       SAVE AS NEW (WORKS EVEN WITH LARGE INSERTED IMAGES)
+    ---------------------------------------------------- */
+    async function triggerSaveAsNew() {
+      await syncCurrentTemplateObject();
+
+      const baseName = templateNameInput.value.trim() || 'Custom Layout';
+      const cleanBase = baseName.replace(/\s*\(LAPTOP-[^)]+\)/, '');
+      const newTitle = `${cleanBase} Copy - ${savedTemplates.length + 1} (LAPTOP-M8RRI1FC)`;
+
+      const newTemplate = {
+        id: 'tpl-' + Date.now(),
+        title: newTitle,
+        paperSize: document.getElementById('select-paper-size').value,
+        orientation: document.getElementById('select-orientation').value,
+        resolution: document.getElementById('select-resolution').value,
+        dimensionUnit: document.getElementById('select-dimension-unit').value,
+        customPaperWidth: document.getElementById('inp-paper-width').value,
+        customPaperHeight: document.getElementById('inp-paper-height').value,
+        artboardWidth: parseFloat(artboard.style.width) || 380,
+        artboardHeight: parseFloat(artboard.style.height) || 570,
+        bg: artboard.style.backgroundColor || '#ffffff',
+        themePattern: layers.some(l => l.bg === '#5487af') ? 'cells-123' : 'custom',
+        layers: JSON.parse(JSON.stringify(layers))
+      };
+
+      try {
+        newTemplate.thumbnailDataUri = await generateExactTemplateThumbnail(newTemplate);
+      } catch(e) {}
+
+      savedTemplates.unshift(newTemplate);
+      currentTemplate = newTemplate;
+      activeTemplateTitleDisplay.textContent = newTitle;
+      templateNameInput.value = newTitle.replace(/\s*\(LAPTOP-[^)]+\)/, '');
+
+      await saveTemplatesToStorage();
+      markAsSaved();
+      openTemplateDropdown();
+    }
+
+    function toggleTemplateDropdown() {
+      if (templateDropdownModal.classList.contains('hidden')) {
+        openTemplateDropdown();
+      } else {
+        closeTemplateDropdown();
+      }
+    }
+
+    async function openTemplateDropdown() {
+      await syncCurrentTemplateObject();
+      templateDropdownModal.classList.remove('hidden');
+      templateDropdownModal.classList.add('flex');
+      templateNameInput.value = currentTemplate ? currentTemplate.title.replace(/\s*\(LAPTOP-[^)]+\)/, '') : 'Untitled-1';
+      renderDropdownTemplateList();
+      document.getElementById('dropdown-chevron-icon').style.transform = 'rotate(180deg)';
+    }
+
+    function closeTemplateDropdown() {
+      templateDropdownModal.classList.add('hidden');
+      templateDropdownModal.classList.remove('flex');
+      document.getElementById('dropdown-chevron-icon').style.transform = 'rotate(0deg)';
+    }
+
+    async function commitTemplateNameRename() {
+      if (!currentTemplate) return;
+      const cleanVal = templateNameInput.value.trim();
+      if (!cleanVal) return;
+
+      currentTemplate.title = cleanVal.includes('(LAPTOP-') ? cleanVal : `${cleanVal} (LAPTOP-M8RRI1FC)`;
+      activeTemplateTitleDisplay.textContent = currentTemplate.title;
+      await saveTemplatesToStorage();
+      renderDropdownTemplateList();
+      markAsSaved();
+    }
+
+    function sortTemplateList() {
+      savedTemplates.sort((a, b) => a.title.localeCompare(b.title));
+      renderDropdownTemplateList();
+    }
+
+    function saveAndAddNewLayout() {
+      triggerSaveAsNew();
+      closeTemplateDropdown();
+    }
+
+    function renderDropdownTemplateList() {
+      savedTemplatesScrollList.innerHTML = '';
+      savedTemplates.forEach((tpl) => {
+        const item = document.createElement('div');
+        const isCurrent = currentTemplate && currentTemplate.id === tpl.id;
+        item.className = `flex items-center gap-3.5 p-2 rounded-lg cursor-pointer transition ${
+          isCurrent ? 'bg-[#323037] border border-[#525058]' : 'hover:bg-[#2b2a2e] border border-transparent'
+        }`;
+
+        item.innerHTML = `
+          <div class="w-11 h-16 rounded bg-white border border-[#4a484f] overflow-hidden flex items-center justify-center shrink-0 shadow">
+            ${tpl.thumbnailDataUri ? `<img src="${tpl.thumbnailDataUri}" class="w-full h-full object-contain" alt="">` : `<i class="fa-solid fa-shapes text-zinc-400"></i>`}
+          </div>
+          <div class="flex-1 truncate">
+            <span class="text-xs font-medium text-white truncate block">${tpl.title}</span>
+            <span class="text-[10px] text-[#939196] block">${tpl.layers ? tpl.layers.length : 3} layers</span>
+          </div>
+          ${isCurrent ? '<span class="text-xs text-[#d82b6b] mr-1"><i class="fa-solid fa-check"></i></span>' : ''}
+        `;
+
+        item.onclick = () => {
+          loadTemplateIntoEditor(tpl);
+          closeTemplateDropdown();
+        };
+
+        savedTemplatesScrollList.appendChild(item);
+      });
+    }
+
+    /* ----------------------------------------------------
+       IMAGE UPLOAD WITH BOUNDED RESOLUTION
+    ---------------------------------------------------- */
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const rawImg = new Image();
+        rawImg.onload = () => {
+          saveState();
+          const maxDim = 1000;
+          let targetW = rawImg.width;
+          let targetH = rawImg.height;
+
+          if (targetW > maxDim || targetH > maxDim) {
+            if (targetW > targetH) {
+              targetH = Math.round((targetH * maxDim) / targetW);
+              targetW = maxDim;
+            } else {
+              targetW = Math.round((targetW * maxDim) / targetH);
+              targetH = maxDim;
+            }
+          }
+
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = targetW;
+          offCanvas.height = targetH;
+          const ctx = offCanvas.getContext('2d');
+          ctx.drawImage(rawImg, 0, 0, targetW, targetH);
+
+          const optimizedDataUri = offCanvas.toDataURL('image/png');
+
+          const newLayer = {
+            id: 'layer-img-' + Date.now(),
+            type: 'image',
+            name: file.name.replace(/\.[^/.]+$/, "") || 'Overlay Image',
+            x: 40,
+            y: 40,
+            w: 300,
+            h: 220,
+            rot: 0,
+            locked: false,
+            visible: true,
+            src: optimizedDataUri
+          };
+
+          layers.unshift(newLayer);
+          selectedLayerId = newLayer.id;
+          renderCanvasAndLayers();
+          syncCurrentTemplateObject();
+        };
+        rawImg.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    /* ----------------------------------------------------
+       CANVAS & LAYERS RENDERING
+    ---------------------------------------------------- */
+    function renderCanvasAndLayers() {
+      artboardElements.innerHTML = '';
+      layersListContainer.innerHTML = '';
+
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const layer = layers[i];
+        const el = document.createElement('div');
+        el.className = 'canvas-item';
+        el.id = layer.id;
+        el.style.left = layer.x + 'px';
+        el.style.top = layer.y + 'px';
+        el.style.width = layer.w + 'px';
+        el.style.height = layer.h + 'px';
+        el.style.transform = `rotate(${layer.rot}deg)`;
+        el.style.display = layer.visible ? 'flex' : 'none';
+
+        if (layer.type === 'camera') {
+          el.style.backgroundColor = layer.bg;
+          el.style.border = '2.5px solid #ffffff';
+
+          let silhouetteSvg = layer.silhouette === 'female'
+            ? `<svg viewBox="0 0 100 130" class="w-full h-full fill-black pointer-events-none"><circle cx="50" cy="22" r="14"/><path d="M34 22 C34 10 66 10 66 22 C66 32 62 36 60 40 C65 42 70 50 68 64 C64 68 62 68 58 72 C56 82 58 92 64 125 L36 125 C42 92 44 82 42 72 C38 68 36 68 32 64 C30 50 35 42 40 40 C38 36 34 32 34 22 Z"/></svg>`
+            : `<svg viewBox="0 0 100 130" class="w-full h-full fill-black pointer-events-none"><circle cx="50" cy="22" r="13"/><path d="M35 38 L65 38 L72 80 L66 126 L34 126 L28 80 Z"/><polygon points="48,40 52,40 54,64 50,72 46,64" fill="${layer.bg}"/></svg>`;
+
+          el.innerHTML = `
+            <div class="relative w-full h-full flex items-center justify-center overflow-hidden pointer-events-none">
+              <div class="w-[72px] h-[106px] relative flex items-center justify-center pointer-events-none">
+                ${silhouetteSvg}
+                <span class="absolute text-5xl font-black text-white pointer-events-none drop-shadow-md select-none">${layer.cameraNumber}</span>
+              </div>
+            </div>
+          `;
+        } else if (layer.type === 'image') {
+          el.innerHTML = `<img src="${layer.src}" class="w-full h-full object-contain pointer-events-none" draggable="false">`;
+        } else if (layer.type === 'text') {
+          el.innerHTML = `<div class="font-bold text-center px-2 pointer-events-none" style="color: ${layer.color}; font-size: ${layer.fontSize}px;">${layer.text}</div>`;
+        } else if (layer.type === 'shape') {
+          el.innerHTML = `
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-none stroke-[#882236] stroke-2 pointer-events-none">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          `;
+        } else if (layer.type === 'qr') {
+          el.innerHTML = `
+            <div class="w-full h-full bg-white p-1 border border-black flex items-center justify-center pointer-events-none">
+              <i class="fa-solid fa-qrcode text-black text-3xl"></i>
+            </div>
+          `;
+        }
+
+        attachElementInteraction(el, layer);
+        artboardElements.appendChild(el);
+      }
+
+      layers.forEach((layer) => {
+        const card = document.createElement('div');
+        const isActive = layer.id === selectedLayerId;
+        card.className = `flex items-center h-[82px] px-2.5 rounded border transition cursor-pointer shrink-0 select-none ${
+          isActive ? 'bg-[#1e75e5] border-[#4293ff]' : 'bg-[#27262a] hover:bg-[#313035] border-[#3c3a41]'
+        }`;
+
+        card.innerHTML = `
+          <div class="eye-toggle w-9 h-9 border border-[#48464d] bg-black/25 rounded flex items-center justify-center mr-2.5 shrink-0">
+            <svg class="w-4 h-4 ${layer.visible ? 'stroke-white' : 'stroke-zinc-500 opacity-40'} stroke-[2.2] fill-none" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
+          <span class="text-xs font-medium text-white truncate flex-1">${layer.name}</span>
+          ${layer.locked ? '<span class="text-white text-xs"><i class="fa-solid fa-lock"></i></span>' : ''}
+        `;
+
+        card.onclick = (e) => {
+          if (e.target.closest('.eye-toggle')) return;
+          selectedLayerId = layer.id;
+          renderCanvasAndLayers();
+          syncCurrentTemplateObject();
+        };
+
+        card.querySelector('.eye-toggle').onclick = (e) => {
+          e.stopPropagation();
+          layer.visible = !layer.visible;
+          renderCanvasAndLayers();
+          syncCurrentTemplateObject();
+        };
+
+        layersListContainer.appendChild(card);
+      });
+
+      updateSelectionOverlay();
+      syncInspector();
+    }
+
+    function updateSelectionOverlay() {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer || !layer.visible) {
+        selectionBox.classList.remove('visible');
+        return;
+      }
+
+      selectionBox.style.left = layer.x + 'px';
+      selectionBox.style.top = layer.y + 'px';
+      selectionBox.style.width = layer.w + 'px';
+      selectionBox.style.height = layer.h + 'px';
+      selectionBox.style.transform = `rotate(${layer.rot}deg)`;
+      selectionBox.classList.add('visible');
+    }
+
+    function syncInspector() {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer) return;
+      inpX.value = Math.round(layer.x);
+      inpY.value = Math.round(layer.y);
+      inpW.value = Math.round(layer.w);
+      inpH.value = Math.round(layer.h);
+      inpRotate.value = Math.round(layer.rot);
+
+      if (layer.locked) {
+        btnLock.classList.add('text-[#1e75e5]');
+      } else {
+        btnLock.classList.remove('text-[#1e75e5]');
+      }
+    }
+
+    /* ----------------------------------------------------
+       FREEHAND MOVEMENT LOGIC
+    ---------------------------------------------------- */
+    function attachElementInteraction(el, layer) {
+      let isDragging = false;
+      let startClientX = 0;
+      let startClientY = 0;
+      let initialLayerX = 0;
+      let initialLayerY = 0;
+
+      el.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        selectedLayerId = layer.id;
+        updateSelectionOverlay();
+        syncInspector();
+        if (layer.locked) return;
+
+        saveState();
+        isDragging = true;
+        startClientX = e.clientX;
+        startClientY = e.clientY;
+        initialLayerX = layer.x;
+        initialLayerY = layer.y;
+
+        el.setPointerCapture(e.pointerId);
+        e.stopPropagation();
+      });
+
+      el.addEventListener('pointermove', (e) => {
+        if (!isDragging || layer.locked) return;
+        layer.x = Math.round(initialLayerX + (e.clientX - startClientX) / canvasZoom);
+        layer.y = Math.round(initialLayerY + (e.clientY - startClientY) / canvasZoom);
+
+        el.style.left = layer.x + 'px';
+        el.style.top = layer.y + 'px';
+
+        updateSelectionOverlay();
+        syncInspector();
+      });
+
+      const endDrag = (e) => {
+        if (isDragging) {
+          isDragging = false;
+          try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+          renderCanvasAndLayers();
+          syncCurrentTemplateObject();
+        }
+      };
+
+      el.addEventListener('pointerup', endDrag);
+      el.addEventListener('pointercancel', endDrag);
+    }
+
+    /* ----------------------------------------------------
+       CORNER RESIZING & ROTATION
+    ---------------------------------------------------- */
+    document.querySelectorAll('.handle-circle').forEach(handle => {
+      let isResizing = false;
+      let resizeHandleType = null;
+      let rStartX, rStartY, rInitX, rInitY, rInitW, rInitH, initAspect;
+
+      handle.addEventListener('pointerdown', (e) => {
+        const layer = layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.locked || e.button !== 0) return;
+        e.stopPropagation();
+
+        saveState();
+        isResizing = true;
+        resizeHandleType = handle.dataset.handle;
+        rStartX = e.clientX;
+        rStartY = e.clientY;
+        rInitX = layer.x;
+        rInitY = layer.y;
+        rInitW = layer.w;
+        rInitH = layer.h;
+        initAspect = rInitW / rInitH;
+
+        handle.setPointerCapture(e.pointerId);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!isResizing) return;
+        const layer = layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.locked) return;
+
+        const dx = (e.clientX - rStartX) / canvasZoom;
+        const dy = (e.clientY - rStartY) / canvasZoom;
+        const keepRatio = chkAspect.checked;
+
+        if (resizeHandleType === 'br') {
+          layer.w = Math.max(30, rInitW + dx);
+          layer.h = keepRatio ? layer.w / initAspect : Math.max(30, rInitH + dy);
+        } else if (resizeHandleType === 'bl') {
+          const newW = Math.max(30, rInitW - dx);
+          layer.x = rInitX + (rInitW - newW);
+          layer.w = newW;
+          layer.h = keepRatio ? layer.w / initAspect : Math.max(30, rInitH + dy);
+        } else if (resizeHandleType === 'tr') {
+          layer.w = Math.max(30, rInitW + dx);
+          const newH = keepRatio ? layer.w / initAspect : Math.max(30, rInitH - dy);
+          layer.y = rInitY + (rInitH - newH);
+          layer.h = newH;
+        } else if (resizeHandleType === 'tl') {
+          const newW = Math.max(30, rInitW - dx);
+          layer.x = rInitX + (rInitW - newW);
+          layer.w = newW;
+          const newH = keepRatio ? layer.w / initAspect : Math.max(30, rInitH - dy);
+          layer.y = rInitY + (rInitH - newH);
+          layer.h = newH;
+        }
+
+        const el = document.getElementById(layer.id);
+        if (el) {
+          el.style.left = layer.x + 'px';
+          el.style.top = layer.y + 'px';
+          el.style.width = layer.w + 'px';
+          el.style.height = layer.h + 'px';
+        }
+        updateSelectionOverlay();
+        syncInspector();
+      });
+
+      const endResize = (e) => {
+        if (isResizing) {
+          isResizing = false;
+          try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
+          syncCurrentTemplateObject();
+        }
+      };
+
+      handle.addEventListener('pointerup', endResize);
+      handle.addEventListener('pointercancel', endResize);
+    });
+
+    let isRotating = false;
+    rotateHandle.addEventListener('pointerdown', (e) => {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer || layer.locked || e.button !== 0) return;
+      e.stopPropagation();
+
+      saveState();
+      isRotating = true;
+      rotateHandle.setPointerCapture(e.pointerId);
+    });
+
+    rotateHandle.addEventListener('pointermove', (e) => {
+      if (!isRotating) return;
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer || layer.locked) return;
+
+      const el = document.getElementById(layer.id);
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const deg = Math.round(Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2)) * (180 / Math.PI)) - 90;
+
+      layer.rot = deg;
+      el.style.transform = `rotate(${layer.rot}deg)`;
+      updateSelectionOverlay();
+      syncInspector();
+    });
+
+    const endRotate = (e) => {
+      if (isRotating) {
+        isRotating = false;
+        try { rotateHandle.releasePointerCapture(e.pointerId); } catch(err) {}
+        syncCurrentTemplateObject();
+      }
+    };
+    rotateHandle.addEventListener('pointerup', endRotate);
+    rotateHandle.addEventListener('pointercancel', endRotate);
+
+    // Inspector manual inputs
+    [inpX, inpY, inpW, inpH, inpRotate].forEach(inp => {
+      inp.addEventListener('input', () => {
+        const layer = layers.find(l => l.id === selectedLayerId);
+        if (!layer || layer.locked) return;
+
+        layer.x = parseFloat(inpX.value) || 0;
+        layer.y = parseFloat(inpY.value) || 0;
+        layer.w = Math.max(20, parseFloat(inpW.value) || 20);
+        layer.h = Math.max(20, parseFloat(inpH.value) || 20);
+        layer.rot = parseFloat(inpRotate.value) || 0;
+
+        const el = document.getElementById(layer.id);
+        if (el) {
+          el.style.left = layer.x + 'px';
+          el.style.top = layer.y + 'px';
+          el.style.width = layer.w + 'px';
+          el.style.height = layer.h + 'px';
+          el.style.transform = `rotate(${layer.rot}deg)`;
+        }
+        updateSelectionOverlay();
+      });
+
+      inp.addEventListener('change', () => {
+        syncCurrentTemplateObject();
+      });
+    });
+
+    /* ----------------------------------------------------
+       CREATING OTHER LAYERS
+    ---------------------------------------------------- */
+    function addCameraSlot() {
+      saveState();
+      cameraCounter++;
+      const theme = cameraThemeColors[(cameraCounter - 1) % cameraThemeColors.length];
+      const newLayer = {
+        id: 'layer-' + Date.now(),
+        type: 'camera',
+        name: `Photo ${cameraCounter}`,
+        cameraNumber: cameraCounter,
+        x: 48,
+        y: Math.min(380, 24 + ((cameraCounter - 1) * 150)),
+        w: 284,
+        h: 155,
+        rot: 0,
+        locked: false,
+        visible: true,
+        bg: theme.bg,
+        silhouette: theme.silhouette
+      };
+
+      layers.unshift(newLayer);
+      selectedLayerId = newLayer.id;
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function addTextLayer() {
+      saveState();
+      const newLayer = {
+        id: 'layer-txt-' + Date.now(),
+        type: 'text',
+        name: 'Custom Text',
+        text: 'Best Day Ever!',
+        x: 40,
+        y: 400,
+        w: 240,
+        h: 50,
+        rot: 0,
+        locked: false,
+        visible: true,
+        fontSize: 24,
+        color: '#d82b6b'
+      };
+      layers.unshift(newLayer);
+      selectedLayerId = newLayer.id;
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function addShapeLayer() {
+      saveState();
+      const newLayer = {
+        id: 'layer-shape-' + Date.now(),
+        type: 'shape',
+        name: 'Decorative Star',
+        x: 30,
+        y: 480,
+        w: 60,
+        h: 60,
+        rot: -12,
+        locked: false,
+        visible: true
+      };
+      layers.unshift(newLayer);
+      selectedLayerId = newLayer.id;
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function addQrCodeLayer() {
+      saveState();
+      const newLayer = {
+        id: 'layer-qr-' + Date.now(),
+        type: 'qr',
+        name: 'QR Code',
+        x: 280,
+        y: 480,
+        w: 64,
+        h: 64,
+        rot: 0,
+        locked: false,
+        visible: true
+      };
+      layers.unshift(newLayer);
+      selectedLayerId = newLayer.id;
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function changeCanvasBg(col) {
+      saveState();
+      artboard.style.backgroundColor = col;
+      syncCurrentTemplateObject();
+    }
+
+    function handlePaperSizeChange(val) {
+      saveState();
+      if (val === '2x6') {
+        artboard.style.width = '320px';
+        artboard.style.height = '600px';
+      } else {
+        artboard.style.width = '380px';
+        artboard.style.height = '570px';
+      }
+      updateSelectionOverlay();
+      syncCurrentTemplateObject();
+    }
+
+    function handleOrientationChange(val) {
+      saveState();
+      const w = parseFloat(artboard.style.width) || 380;
+      const h = parseFloat(artboard.style.height) || 570;
+      if (val === 'Horizontal' && h > w) {
+        artboard.style.width = `${h}px`;
+        artboard.style.height = `${w}px`;
+      } else if (val === 'Vertical' && w > h) {
+        artboard.style.width = `${h}px`;
+        artboard.style.height = `${w}px`;
+      }
+      updateSelectionOverlay();
+      syncCurrentTemplateObject();
+    }
+
+    function handleCustomDimensionInput() {
+      const w = parseFloat(document.getElementById('inp-paper-width').value) || 1200;
+      const h = parseFloat(document.getElementById('inp-paper-height').value) || 1800;
+      const maxDisplayH = 570;
+      const scaledW = Math.round((w / h) * maxDisplayH);
+
+      artboard.style.width = `${scaledW}px`;
+      artboard.style.height = `${maxDisplayH}px`;
+      updateSelectionOverlay();
+      syncCurrentTemplateObject();
+    }
+
+    function adjustCanvasZoom(amount) {
+      canvasZoom = Math.min(2, Math.max(0.5, Math.round((canvasZoom + amount) * 10) / 10));
+      applyCanvasZoom();
+      saveEditorSettings();
+    }
+
+    function resetCanvasZoom() {
+      canvasZoom = 1;
+      applyCanvasZoom();
+      saveEditorSettings();
+    }
+
+    function applyCanvasZoom() {
+      artboard.style.setProperty('transform', `scale(${canvasZoom})`, 'important');
+      document.getElementById('zoom-level-display').textContent = `${Math.round(canvasZoom * 100)}%`;
+    }
+
+    function loadEditorSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem(EDITOR_SETTINGS_KEY) || '{}');
+        canvasZoom = Math.min(2, Math.max(0.5, Number(settings.canvasZoom) || 1));
+      } catch(e) {
+        canvasZoom = 1;
+      }
+      applyCanvasZoom();
+    }
+
+    function saveEditorSettings() {
+      try {
+        localStorage.setItem(EDITOR_SETTINGS_KEY, JSON.stringify({ canvasZoom }));
+      } catch(e) {}
+    }
+
+    function printTemplate() {
+      const paperSize = document.getElementById('select-paper-size').value;
+      const orientation = document.getElementById('select-orientation').value;
+      const paperDimensions = {
+        '2x6': [2, 6],
+        '4x6': [4, 6],
+        '5x7': [5, 7],
+        '6x8': [6, 8],
+        '6x6': [6, 6],
+        '8x10': [8, 10]
+      };
+      const resolution = parseFloat(document.getElementById('select-resolution').value) || 300;
+      let [paperWidth, paperHeight] = paperSize === 'Custom'
+        ? [
+            (parseFloat(document.getElementById('inp-paper-width').value) || 1200) / resolution,
+            (parseFloat(document.getElementById('inp-paper-height').value) || 1800) / resolution
+          ]
+        : paperDimensions[paperSize] || [4, 6];
+
+      if ((orientation === 'Horizontal' && paperHeight > paperWidth)
+        || (orientation === 'Vertical' && paperWidth > paperHeight)) {
+        [paperWidth, paperHeight] = [paperHeight, paperWidth];
+      }
+
+      const artboardWidth = artboard.offsetWidth;
+      const artboardHeight = artboard.offsetHeight;
+      const pageWidthPx = paperWidth * 96;
+      const pageHeightPx = paperHeight * 96;
+      const scale = Math.min(pageWidthPx / artboardWidth, pageHeightPx / artboardHeight);
+      const left = (pageWidthPx - artboardWidth * scale) / 2;
+      const top = (pageHeightPx - artboardHeight * scale) / 2;
+      const printStyles = document.createElement('style');
+      printStyles.id = 'template-print-styles';
+      printStyles.textContent = `
+        @page { size: ${paperWidth}in ${paperHeight}in; margin: 0; }
+        @media print {
+          html, body {
+            width: ${paperWidth}in !important;
+            height: ${paperHeight}in !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+          }
+          body * { visibility: hidden !important; }
+          #artboard {
+            position: fixed !important;
+            left: ${left}px !important;
+            top: ${top}px !important;
+            width: ${artboardWidth}px !important;
+            height: ${artboardHeight}px !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+            transform: scale(${scale}) !important;
+            transform-origin: top left !important;
+            transition: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #artboard, #artboard * { visibility: visible !important; }
+          #selection-box { display: none !important; }
+        }
+      `;
+      document.head.appendChild(printStyles);
+      artboard.style.removeProperty('transform');
+      window.addEventListener('afterprint', () => {
+        printStyles.remove();
+        applyCanvasZoom();
+      }, { once: true });
+      window.print();
+    }
+
+    function markAsSaved() {
+      if (persistenceUnavailable) {
+        setSaveStatus('Save failed. Check browser storage.', true);
+        return;
+      }
+      setSaveStatus('All changes saved ✓');
+    }
+
+    function bringForward() {
+      const idx = layers.findIndex(l => l.id === selectedLayerId);
+      if (idx > 0) {
+        saveState();
+        const item = layers.splice(idx, 1)[0];
+        layers.splice(idx - 1, 0, item);
+        renderCanvasAndLayers();
+        syncCurrentTemplateObject();
+      }
+    }
+
+    function sendBackward() {
+      const idx = layers.findIndex(l => l.id === selectedLayerId);
+      if (idx >= 0 && idx < layers.length - 1) {
+        saveState();
+        const item = layers.splice(idx, 1)[0];
+        layers.splice(idx + 1, 0, item);
+        renderCanvasAndLayers();
+        syncCurrentTemplateObject();
+      }
+    }
+
+    function deleteSelectedLayer() {
+      const idx = layers.findIndex(l => l.id === selectedLayerId);
+      if (idx >= 0) {
+        saveState();
+        layers.splice(idx, 1);
+        selectedLayerId = layers[0] ? layers[0].id : null;
+        renderCanvasAndLayers();
+        syncCurrentTemplateObject();
+      }
+    }
+
+    function toggleActiveLock() {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (layer) {
+        saveState();
+        layer.locked = !layer.locked;
+        renderCanvasAndLayers();
+      }
+    }
+
+    function duplicateActiveLayer() {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer) return;
+      saveState();
+      const clone = JSON.parse(JSON.stringify(layer));
+      clone.id = 'layer-' + Date.now();
+      clone.name += ' Copy';
+      clone.x += 15;
+      clone.y += 15;
+      layers.unshift(clone);
+      selectedLayerId = clone.id;
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function alignElement(type) {
+      const layer = layers.find(l => l.id === selectedLayerId);
+      if (!layer || layer.locked) return;
+      saveState();
+      const artW = artboard.clientWidth;
+      const artH = artboard.clientHeight;
+      if (type === 'left') layer.x = 10;
+      else if (type === 'center') layer.x = Math.round((artW - layer.w) / 2);
+      else if (type === 'right') layer.x = Math.round(artW - layer.w - 10);
+      else if (type === 'top') layer.y = 10;
+      else if (type === 'middle') layer.y = Math.round((artH - layer.h) / 2);
+      else if (type === 'bottom') layer.y = Math.round(artH - layer.h - 10);
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function distributeHorizontal() {
+      if (layers.length < 2) return;
+      saveState();
+      layers.sort((a, b) => a.x - b.x);
+      const minX = layers[0].x;
+      const step = (layers[layers.length - 1].x - minX) / (layers.length - 1);
+      layers.forEach((l, i) => l.x = Math.round(minX + i * step));
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function distributeVertical() {
+      if (layers.length < 2) return;
+      saveState();
+      layers.sort((a, b) => a.y - b.y);
+      const minY = layers[0].y;
+      const step = (layers[layers.length - 1].y - minY) / (layers.length - 1);
+      layers.forEach((l, i) => l.y = Math.round(minY + i * step));
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function saveState() {
+      undoStack.push(JSON.stringify(layers));
+      if (undoStack.length > 30) undoStack.shift();
+      redoStack.length = 0;
+    }
+
+    function undoAction() {
+      if (undoStack.length === 0) return;
+      redoStack.push(JSON.stringify(layers));
+      layers = JSON.parse(undoStack.pop());
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function redoAction() {
+      if (redoStack.length === 0) return;
+      undoStack.push(JSON.stringify(layers));
+      layers = JSON.parse(redoStack.pop());
+      renderCanvasAndLayers();
+      syncCurrentTemplateObject();
+    }
+
+    function toggleSettingsDropdown() {
+      const panel = document.getElementById('settings-dropdown-panel');
+      if (panel.classList.contains('open')) {
+        closeSettingsDropdown();
+      } else {
+        openSettingsDropdown();
+      }
+    }
+
+    function openSettingsDropdown() {
+      const panel = document.getElementById('settings-dropdown-panel');
+      const chevronSvg = document.getElementById('settings-toggle-svg');
+      panel.classList.add('open');
+      chevronSvg.style.transform = 'rotate(180deg)';
+    }
+
+    function closeSettingsDropdown() {
+      const panel = document.getElementById('settings-dropdown-panel');
+      const chevronSvg = document.getElementById('settings-toggle-svg');
+      panel.classList.remove('open');
+      chevronSvg.style.transform = 'rotate(0deg)';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeSettingsDropdown();
+        closeTemplateDropdown();
+      }
+    });
+
+    function testInChooseTemplate() {
+      syncCurrentTemplateObject().then(() => {
+        window.location.href = 'template.html';
+      });
+    }
+
+    window.addEventListener('pagehide', flushDraftSave);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushDraftSave();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadEditorSettings();
+      initDatabase();
+    });
+  </script>
+</body>
+</html>

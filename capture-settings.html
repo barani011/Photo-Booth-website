@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Start - Capture Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      min-height: 100%;
+      background-color: #1e1d1f;
+      color: #eae9eb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* Top Titlebar */
+    .titlebar {
+      height: 38px;
+      background-color: #121113;
+      border-bottom: 1px solid #232224;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 13px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 22px;
+      height: 22px;
+      background-color: #d82b6b;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #928f95;
+    }
+
+    .window-btn {
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* Subheader Navigation */
+    .nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background-color: #1e1d1f;
+      position: relative;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #a4a2a7;
+      text-decoration: none;
+      font-size: 16px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+    }
+
+    .nav-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .top-right-wrap {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* Floating toggle button */
+    .btn-toggle-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #d82b6b;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-toggle-circle svg {
+      width: 20px;
+      height: 20px;
+      stroke: #fff;
+      stroke-width: 2.8;
+      fill: none;
+    }
+
+    /* Main Container */
+    .main-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 10px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Top Capture Mode Switcher Card */
+    .modes-selector-card {
+      background-color: #272628;
+      border-radius: 12px;
+      padding: 24px 30px;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      border: 1px solid #333235;
+    }
+
+    .mode-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 170px;
+      cursor: pointer;
+    }
+
+    .mode-circle-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      margin-bottom: 12px;
+      transition: transform 0.15s ease;
+    }
+
+    .mode-col:hover .mode-circle-btn {
+      transform: scale(1.06);
+    }
+
+    .mode-circle-btn svg {
+      width: 32px;
+      height: 32px;
+      stroke: #1e1d1f;
+      stroke-width: 2.2;
+      fill: none;
+    }
+
+    .mode-heading {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .mode-desc {
+      font-size: 11px;
+      color: #9b999e;
+      line-height: 1.3;
+    }
+
+    /* Settings Sections Grid */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background-color: #272628;
+      border-radius: 12px;
+      padding: 22px 24px;
+      border: 1px solid #333235;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #eae9eb;
+    }
+
+    /* Custom Switch Toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #4a484c;
+      transition: 0.25s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #d82b6b;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* Control Rows */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .setting-label {
+      font-size: 13px;
+      color: #dbdadc;
+    }
+
+    /* Custom Range Sliders */
+    .slider-control-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .custom-range {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 140px;
+      height: 4px;
+      background: #4a484c;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid #d82b6b;
+      cursor: pointer;
+    }
+
+    .number-box {
+      border: 1px solid #4a484c;
+      border-radius: 4px;
+      width: 38px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #ffffff;
+      background-color: #201f21;
+    }
+
+    .unit-tag {
+      font-size: 12px;
+      color: #9b999e;
+      margin-left: 2px;
+    }
+
+    /* Dropdown Selectors */
+    .custom-select {
+      background-color: #201f21;
+      border: 1px solid #4a484c;
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      width: 220px;
+      cursor: pointer;
+    }
+
+    .slider-caption-row {
+      display: flex;
+      justify-content: space-between;
+      width: 140px;
+      font-size: 10px;
+      color: #8c8990;
+      margin-top: 5px;
+    }
+
+    .pink-link {
+      color: #d82b6b;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .trash-btn {
+      background: none;
+      border: none;
+      color: #deddde;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .trash-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Titlebar -->
+  <header class="titlebar">
+    <div class="brand">
+      <div class="brand-logo">🐾</div>
+      <span>LumaBooth (dslrBooth) - Start</span>
+    </div>
+    <div class="window-controls">
+      <span class="window-btn">—</span>
+      <span class="window-btn">▢</span>
+      <span class="window-btn" onclick="window.history.back()">✕</span>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <div class="nav-header">
+    <button class="nav-link" onclick="window.history.back()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      General
+    </button>
+    <div class="page-title">Capture Settings</div>
+    <div class="top-right-wrap">
+      <button class="nav-link" onclick="window.location.href='camera-settings.html'">
+  Camera Settings
+  <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+      <button class="btn-toggle-circle" onclick="window.history.back()" title="Collapse">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </div>
+  </div>
+
+  <main class="main-content">
+    <!-- Top 4 Capture Modes Card -->
+    <section class="modes-selector-card">
+      <div class="mode-col">
+        <div class="mode-circle-btn">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <circle cx="12" cy="12" r="4.5"></circle>
+            <circle cx="17.5" cy="6.5" r="1.2" fill="#1e1d1f"></circle>
+          </svg>
+        </div>
+        <div class="mode-heading">Photo</div>
+        <div class="mode-desc">Capture photos for print</div>
+      </div>
+
+      <div class="mode-col">
+        <div class="mode-circle-btn">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="6" width="15" height="15" rx="3" ry="3"></rect>
+            <path d="M7 6V4a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-2"></path>
+          </svg>
+        </div>
+        <div class="mode-heading">GIF</div>
+        <div class="mode-desc">Capture photos for GIF</div>
+      </div>
+
+      <div class="mode-col">
+        <div class="mode-circle-btn">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <path d="M12 4a8 8 0 1 1-7.2 4.5"></path>
+            <circle cx="4.8" cy="8.5" r="1.5" fill="#1e1d1f"></circle>
+            <circle cx="19.2" cy="15.5" r="1.5" fill="#1e1d1f"></circle>
+          </svg>
+        </div>
+        <div class="mode-heading">360/Slow-mo</div>
+        <div class="mode-desc">Record a short 360 or slow motion video</div>
+      </div>
+
+      <div class="mode-col">
+        <div class="mode-circle-btn">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="5" width="13" height="14" rx="3" ry="3"></rect>
+            <polygon points="22 7 15 12 22 17 22 7" fill="#1e1d1f"></polygon>
+          </svg>
+        </div>
+        <div class="mode-heading">Video</div>
+        <div class="mode-desc">Record a video with audio</div>
+      </div>
+    </section>
+
+    <!-- Two-Column Settings Grid -->
+    <div class="settings-grid">
+      
+      <!-- Left Column: Photo Settings -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">Photo</div>
+            <div class="toggle-wrap">
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+              <span>ON</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Before photo 1</span>
+            <div class="slider-control-group">
+              <input type="range" min="1" max="10" value="5" class="custom-range" oninput="document.getElementById('b1-val').textContent=this.value">
+              <div class="number-box" id="b1-val">5</div>
+              <span class="unit-tag">sec</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Before other photos</span>
+            <div class="slider-control-group">
+              <input type="range" min="1" max="10" value="5" class="custom-range" oninput="document.getElementById('bo-val').textContent=this.value">
+              <div class="number-box" id="bo-val">5</div>
+              <span class="unit-tag">sec</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Photo review time</span>
+            <div class="slider-control-group">
+              <input type="range" min="1" max="10" value="3" class="custom-range" oninput="document.getElementById('pr-val').textContent=this.value">
+              <div class="number-box" id="pr-val">3</div>
+              <span class="unit-tag">sec</span>
+            </div>
+          </div>
+
+          <div class="setting-row" style="margin-bottom: 0;">
+            <span class="setting-label">Also create GIF</span>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div class="toggle-wrap">
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <span>ON</span>
+              </div>
+              <a class="nav-link-item" href="photo-layout.html">Photo Layout</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- GIF Settings Card -->
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">GIF</div>
+            <div class="toggle-wrap">
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+              <span>ON</span>
+            </div>
+          </div>
+
+          <div class="setting-row" style="margin-bottom: 0;">
+            <span class="setting-label">Size</span>
+            <select class="custom-select">
+              <option>Rectangle - 720p 16:9</option>
+              <option>Square - 1080x1080</option>
+            </select>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Video Settings -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">Video</div>
+          <div class="toggle-wrap">
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+            <span>ON</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Video Orientation</span>
+          <select class="custom-select">
+            <option>0 degrees</option>
+            <option>90 degrees</option>
+            <option>180 degrees</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Size</span>
+          <select class="custom-select">
+            <option>Rectangle - 1080p 16:9</option>
+            <option>Square - 1080x1080</option>
+          </select>
+        </div>
+
+        <div class="setting-row" style="align-items: flex-start;">
+          <span class="setting-label" style="margin-top: 4px;">Output Quality</span>
+          <div>
+            <input type="range" min="1" max="100" value="75" class="custom-range" style="width: 220px;">
+            <div class="slider-caption-row" style="width: 220px;">
+              <span>Smaller File Size</span>
+              <span>Higher Quality</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Countdown</span>
+          <div class="slider-control-group">
+            <input type="range" min="1" max="10" value="5" class="custom-range" oninput="document.getElementById('vc-val').textContent=this.value">
+            <div class="number-box" id="vc-val">5</div>
+            <span class="unit-tag">sec</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Clip duration</span>
+          <div class="slider-control-group">
+            <input type="range" min="1" max="30" value="10" class="custom-range" oninput="document.getElementById('cd-val').textContent=this.value">
+            <div class="number-box" id="cd-val">10</div>
+            <span class="unit-tag">sec</span>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-bottom: 0;">
+          <span class="setting-label">Image Overlays</span>
+          <button class="trash-btn" title="Delete overlays">
+            <svg viewBox="0 0 24 24">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</body>
+</html>

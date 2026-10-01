@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Start - Camera Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #1a191b;
+      color: #eae9eb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Titlebar */
+    .titlebar {
+      height: 38px;
+      background-color: #121113;
+      border-bottom: 1px solid #232224;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 13px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 22px;
+      height: 22px;
+      background-color: #d82b6b;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #928f95;
+    }
+
+    .window-btn {
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* Navigation Header */
+    .nav-header {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background-color: #1a191b;
+      border-bottom: 1px solid #282729;
+      z-index: 10;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #a4a2a7;
+      text-decoration: none;
+      font-size: 15px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .nav-link:hover {
+      color: #ffffff;
+    }
+
+    .nav-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      fill: none;
+    }
+
+    .page-title {
+      font-size: 19px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .top-right-wrap {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .btn-toggle-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #d82b6b;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .btn-toggle-circle svg {
+      width: 18px;
+      height: 18px;
+      stroke: #fff;
+      stroke-width: 2.8;
+      fill: none;
+    }
+
+    /* Main Viewport Split */
+    .settings-viewport {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      height: calc(100vh - 86px);
+      overflow: hidden;
+    }
+
+    /* Left Control Sidebar */
+    .controls-sidebar {
+      background-color: #201f21;
+      padding: 24px 20px;
+      border-right: 1px solid #2d2c2e;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .label-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: #929095;
+      line-height: 1.3;
+    }
+
+    /* Toggle Switch */
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #eae9eb;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #4a484c;
+      transition: 0.25s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #d82b6b;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* Webcam Resolution Slider */
+    .range-control {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, #d82b6b 0%, #d82b6b 100%);
+      border-radius: 2px;
+      outline: none;
+      margin-top: 6px;
+    }
+
+    .range-control::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid #d82b6b;
+      cursor: pointer;
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #929095;
+      margin-top: 4px;
+    }
+
+    /* Select Inputs */
+    .custom-select {
+      background-color: #171617;
+      border: 1px solid #444246;
+      color: #ffffff;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Right Live View Area */
+    .live-preview-stage {
+      position: relative;
+      background-color: #0d0d0e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #webcam-view {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s ease;
+    }
+
+    .no-cam-warning {
+      position: absolute;
+      color: #7b787e;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Window Titlebar -->
+  <header class="titlebar">
+    <div class="brand">
+      <div class="brand-logo">🐾</div>
+      <span>LumaBooth (dslrBooth) - Start</span>
+    </div>
+    <div class="window-controls">
+      <span class="window-btn">—</span>
+      <span class="window-btn">▢</span>
+      <span class="window-btn" onclick="window.history.back()">✕</span>
+    </div>
+  </header>
+
+  <!-- Sub Navigation Header -->
+  <div class="nav-header">
+    <button class="nav-link" onclick="window.location.href='capture-settings.html'">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      Capture Settings
+    </button>
+    <div class="page-title">Camera Settings</div>
+    <div class="top-right-wrap">
+      <button class="nav-link">
+        Virtual Attendant
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+      <button class="btn-toggle-circle" onclick="window.history.back()" title="Back">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings & Preview Area -->
+  <main class="settings-viewport">
+
+    <!-- Left Settings Column -->
+    <aside class="controls-sidebar">
+      <!-- Enable Webcams -->
+      <div class="setting-group">
+        <div class="setting-row">
+          <span class="label-title">Enable Webcams</span>
+          <div class="switch-wrap">
+            <label class="switch">
+              <input type="checkbox" id="toggle-webcam" checked onchange="toggleWebcamFeed(this.checked)">
+              <span class="slider"></span>
+            </label>
+            <span id="webcam-status-label">ON</span>
+          </div>
+        </div>
+        <p class="helper-text">If disabled, only Canon/Nikon are used</p>
+      </div>
+
+      <!-- Webcam Resolution -->
+      <div class="setting-group">
+        <span class="label-title">Webcam Resolution</span>
+        <input type="range" min="1" max="100" value="100" class="range-control" id="res-slider">
+        <div class="range-labels">
+          <span>Faster Framerate</span>
+          <span>Higher Quality</span>
+        </div>
+      </div>
+
+      <!-- Mirror Live View -->
+      <div class="setting-group">
+        <div class="setting-row">
+          <span class="label-title">Mirror Live View</span>
+          <div class="switch-wrap">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mirror" onchange="toggleMirrorView(this.checked)">
+              <span class="slider"></span>
+            </label>
+            <span id="mirror-status-label">OFF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rotation -->
+      <div class="setting-group">
+        <span class="label-title">Rotation</span>
+        <select class="custom-select" id="select-rotation" onchange="updateRotation(this.value)">
+          <option value="0">0 degrees</option>
+          <option value="90">90 degrees</option>
+          <option value="180">180 degrees</option>
+          <option value="270">270 degrees</option>
+        </select>
+      </div>
+
+      <!-- Audio Input -->
+      <div class="setting-group">
+        <span class="label-title">Audio Input</span>
+        <select class="custom-select" id="audio-input-select">
+          <option>Microphone Array (AMD Audio Device)</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- Right Live Webcam Stage -->
+    <section class="live-preview-stage">
+      <video id="webcam-view" autoplay playsinline muted></video>
+      <div class="no-cam-warning" id="no-cam-msg">Webcam is disabled</div>
+    </section>
+
+  </main>
+
+  <script>
+    const video = document.getElementById('webcam-view');
+    const noCamMsg = document.getElementById('no-cam-msg');
+    let currentStream = null;
+    let currentRotation = 0;
+    let isMirrored = false;
+
+    // 1. Start live webcam stream
+    async function initCamera() {
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        });
+        video.srcObject = currentStream;
+        listAudioDevices();
+      } catch (err) {
+        console.warn("Camera could not be accessed:", err);
+      }
+    }
+
+    // 2. Enable / Disable Webcam
+    function toggleWebcamFeed(enabled) {
+      document.getElementById('webcam-status-label').textContent = enabled ? 'ON' : 'OFF';
+      if (enabled) {
+        video.style.display = 'block';
+        noCamMsg.style.display = 'none';
+        if (!currentStream) initCamera();
+      } else {
+        video.style.display = 'none';
+        noCamMsg.style.display = 'block';
+      }
+    }
+
+    // 3. Mirror live view
+    function toggleMirrorView(mirrored) {
+      isMirrored = mirrored;
+      document.getElementById('mirror-status-label').textContent = mirrored ? 'ON' : 'OFF';
+      applyTransform();
+    }
+
+    // 4. Rotation handler
+    function updateRotation(degrees) {
+      currentRotation = parseInt(degrees, 10);
+      applyTransform();
+    }
+
+    function applyTransform() {
+      const mirrorScale = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+      video.style.transform = `rotate(${currentRotation}deg) ${mirrorScale}`;
+    }
+
+    // 5. Populate connected audio devices
+    async function listAudioDevices() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(d => d.kind === 'audioinput');
+      const select = document.getElementById('audio-input-select');
+      
+      if (audioInputs.length > 0) {
+        select.innerHTML = '';
+        audioInputs.forEach((mic, index) => {
+          const option = document.createElement('option');
+          option.value = mic.deviceId;
+          option.textContent = mic.label || `Microphone ${index + 1}`;
+          select.appendChild(option);
+        });
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initCamera);
+  </script>
+</body>
+</html>

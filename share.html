@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Share + Print</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #1f1e21;
+      color: #ffffff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Print media query: prints only the final composite strip cleanly */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #print-area-wrapper, #print-area-wrapper * {
+        visibility: visible !important;
+      }
+      #print-area-wrapper {
+        position: fixed !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="w-full h-full flex flex-col bg-[#1f1e21] text-[#eae9eb]">
+
+  <!-- Top Titlebar -->
+  <header class="h-[38px] bg-[#121113] border-b border-[#232224] flex items-center justify-between px-4 text-xs z-50 shrink-0 select-none">
+    <div class="flex items-center gap-3">
+      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
+        🐾
+      </div>
+      <span class="font-medium text-[#ececec]">LumaBooth (dslrBooth) - Share + Print</span>
+    </div>
+    <div class="flex items-center gap-4 text-[#928f95]">
+      <span class="hover:text-white cursor-pointer px-1">—</span>
+      <span class="hover:text-white cursor-pointer px-1">▢</span>
+      <span class="hover:text-rose-500 cursor-pointer px-1" onclick="window.location.href='template.html'">✕</span>
+    </div>
+  </header>
+
+  <!-- Hot Pink Top Accent Bar -->
+  <div class="h-1 bg-[#d82b6b] w-full shrink-0"></div>
+
+  <!-- Main Viewport: Left Polaroid Stack, Center Dynamic Strip, Right Share Actions -->
+  <main class="flex-1 grid grid-cols-[280px_1fr_320px] h-[calc(100vh-42px)] relative p-6 overflow-hidden">
+
+    <!-- Top Right 'Done' Button -->
+    <div class="absolute top-6 right-8 z-30">
+      <button onclick="window.location.href='template.html'" class="bg-[#d82b6b] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3 px-16 rounded-full shadow-lg shadow-[#d82b6b]/40 cursor-pointer border-0 transition-transform">
+        Done
+      </button>
+    </div>
+
+    <!-- 1. LEFT: Tilted Polaroid Preview Stack -->
+    <aside class="flex items-start justify-center pt-8">
+      <div class="relative w-[180px] h-[180px]">
+        <div class="absolute inset-0 bg-[#882236] rounded-lg rotate-6 shadow-xl border-2 border-[#d82b6b]"></div>
+        <div class="absolute inset-0 bg-white p-2 rounded -rotate-6 shadow-2xl flex flex-col items-center overflow-hidden">
+          <img id="polaroid-preview-img" class="w-full h-full object-cover rounded" src="" alt="Captured snapshot">
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. CENTER: Exact Dynamic Photo Strip Rendered from Active Template -->
+    <section class="flex items-center justify-center relative">
+      <div id="print-area-wrapper">
+        <div id="dynamic-rendered-strip" class="relative shadow-2xl overflow-hidden rounded-sm transition-all flex items-center justify-center border border-black/20">
+          <!-- Dynamically populated layers according to the active template and camera positions -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. RIGHT: Share & Print Action Buttons -->
+    <aside class="flex flex-col items-end justify-center gap-6 pr-6">
+
+      <!-- Email -->
+      <button onclick="shareAction('Email')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
+        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Email</span>
+        <div class="w-16 h-16 rounded-full bg-[#e59f2c] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
+          <i class="fa-regular fa-envelope"></i>
+        </div>
+      </button>
+
+      <!-- SMS -->
+      <button onclick="shareAction('SMS')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
+        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">SMS</span>
+        <div class="w-16 h-16 rounded-full bg-[#37c844] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
+          <i class="fa-regular fa-comment-dots"></i>
+        </div>
+      </button>
+
+      <!-- Scan QR -->
+      <button onclick="shareAction('QR Code')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
+        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Scan QR</span>
+        <div class="w-16 h-16 rounded-full bg-[#b7a9c8] flex items-center justify-center text-[#42374e] shadow-lg text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+      </button>
+
+      <!-- Print -->
+      <button onclick="window.print()" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
+        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Print</span>
+        <div class="w-16 h-16 rounded-full bg-[#e53935] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
+          <i class="fa-solid fa-print"></i>
+        </div>
+      </button>
+
+    </aside>
+
+  </main>
+
+  <script>
+    const ACTIVE_KEY = 'lumabooth_active_template_v2';
+    const ACTIVE_ID_KEY = 'lumabooth_active_template_id_v1';
+    const STORAGE_KEY = 'lumabooth_saved_templates_v2';
+    const DB_NAME = 'lumabooth_db';
+    const DB_VERSION = 2;
+    const PHOTO_ASSET_STORE = 'photo_assets';
+    const CAPTURED_PHOTO_ID = 'last-captured-photo';
+
+    function loadDatabaseRecord(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('templates')) db.createObjectStore('templates', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('design_drafts')) db.createObjectStore('design_drafts', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains(PHOTO_ASSET_STORE)) db.createObjectStore(PHOTO_ASSET_STORE, { keyPath: 'id' });
+        };
+        request.onerror = () => reject(request.error || new Error('Database could not be opened.'));
+        request.onsuccess = () => {
+          const db = request.result;
+          try {
+            const transaction = db.transaction(storeName, 'readonly');
+            const recordRequest = transaction.objectStore(storeName).get(key);
+            recordRequest.onsuccess = () => { db.close(); resolve(recordRequest.result || null); };
+            recordRequest.onerror = () => { db.close(); reject(recordRequest.error); };
+          } catch(error) {
+            db.close();
+            reject(error);
+          }
+        };
+      });
+    }
+
+    async function loadShareData() {
+      let savedPhoto = null;
+      let template = null;
+      try {
+        const photoRecord = await loadDatabaseRecord(PHOTO_ASSET_STORE, CAPTURED_PHOTO_ID);
+        savedPhoto = photoRecord?.data || null;
+      } catch(e) {}
+
+      if (!savedPhoto) {
+        try { savedPhoto = sessionStorage.getItem('lastCapturedPhoto'); } catch(e) {}
+      }
+
+      if (savedPhoto) {
+        document.getElementById('polaroid-preview-img').src = savedPhoto;
+      }
+
+      try {
+        const activeId = localStorage.getItem(ACTIVE_ID_KEY);
+        if (activeId) {
+          template = await loadDatabaseRecord('templates', activeId);
+        }
+      } catch(e) {}
+
+      if (!template) {
+        try {
+          const activeRaw = localStorage.getItem(ACTIVE_KEY);
+          if (activeRaw) template = JSON.parse(activeRaw);
+        } catch(e) {}
+      }
+
+      // Fallback to first saved template if not found
+      if (!template) {
+        try {
+          const listRaw = localStorage.getItem(STORAGE_KEY);
+          if (listRaw) template = JSON.parse(listRaw)[0] || null;
+        } catch(e) {}
+      }
+
+      renderExactTemplate(template, savedPhoto);
+    }
+
+    window.addEventListener('DOMContentLoaded', loadShareData);
+
+    function renderExactTemplate(tpl, photoSrc) {
+      const container = document.getElementById('dynamic-rendered-strip');
+      if (!tpl) {
+        container.innerHTML = `<div class="p-8 text-black text-center">No template found.</div>`;
+        return;
+      }
+
+      // Calculate proportional scale to fit comfortably in viewport
+      const baseW = tpl.artboardWidth || 380;
+      const baseH = tpl.artboardHeight || 570;
+      const maxContainerH = window.innerHeight - 130;
+      const scale = Math.min(1, maxContainerH / baseH);
+
+      const renderW = Math.round(baseW * scale);
+      const renderH = Math.round(baseH * scale);
+
+      container.style.width = `${renderW}px`;
+      container.style.height = `${renderH}px`;
+      container.style.backgroundColor = tpl.bg || '#ffffff';
+      container.innerHTML = '';
+
+      // Red plaid patterned background if applicable
+      if (tpl.themePattern === 'plaid-red' || tpl.bg === '#882236' || tpl.bg === '#922b3e') {
+        container.style.backgroundColor = '#882236';
+        container.style.backgroundImage = `
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 20px, transparent 20px, transparent 40px),
+          repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 20px, transparent 20px, transparent 40px)
+        `;
+      }
+
+      const layers = tpl.layers || [];
+
+      // Render layers from bottom to top (in reverse order matching editor stacking)
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const l = layers[i];
+        if (!l.visible) continue;
+
+        const layerEl = document.createElement('div');
+        layerEl.style.position = 'absolute';
+        layerEl.style.left = `${Math.round(l.x * scale)}px`;
+        layerEl.style.top = `${Math.round(l.y * scale)}px`;
+        layerEl.style.width = `${Math.round(l.w * scale)}px`;
+        layerEl.style.height = `${Math.round(l.h * scale)}px`;
+        layerEl.style.transform = `rotate(${l.rot || 0}deg)`;
+        layerEl.style.transformOrigin = 'center center';
+        layerEl.style.overflow = 'hidden';
+
+        if (l.type === 'camera') {
+          // Camera frame slot: place the captured snapshot directly inside it!
+          layerEl.style.border = '2.5px solid #ffffff';
+          layerEl.style.backgroundColor = '#000000';
+
+          if (photoSrc) {
+            layerEl.innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover" alt="Captured photo">`;
+          } else {
+            // Silhouette fallback if camera was skipped
+            layerEl.style.backgroundColor = l.bg || '#8ea352';
+            layerEl.innerHTML = `<div class="w-full h-full flex items-center justify-center font-bold text-white text-3xl">${l.cameraNumber || 1}</div>`;
+          }
+        } else if (l.type === 'image' && l.src) {
+          // Uploaded frame / overlay image / PNG artwork
+          layerEl.innerHTML = `<img src="${l.src}" class="w-full h-full object-contain pointer-events-none" alt="">`;
+        } else if (l.type === 'text') {
+          // Text label
+          layerEl.style.color = l.color || '#d82b6b';
+          layerEl.style.fontSize = `${Math.max(10, Math.round((l.fontSize || 22) * scale))}px`;
+          layerEl.style.fontWeight = 'bold';
+          layerEl.style.display = 'flex';
+          layerEl.style.alignItems = 'center';
+          layerEl.style.justifyContent = 'center';
+          layerEl.textContent = l.text || '';
+        }
+
+        container.appendChild(layerEl);
+      }
+    }
+
+    function shareAction(method) {
+      if (method === 'Email') {
+        const email = prompt("Enter your email address to receive your photo:");
+        if (email) alert(`Photo sent to ${email}!`);
+      } else if (method === 'SMS') {
+        const phone = prompt("Enter your phone number:");
+        if (phone) alert(`Photo sent to ${phone}!`);
+      } else if (method === 'QR Code') {
+        alert("Scan the QR code to download your photo.");
+      }
+    }
+  </script>
+</body>
+</html>

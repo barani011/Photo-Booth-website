@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Saved Events</title>
+  <!-- Load Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load FontAwesome 6 for pixel-accurate UI icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Load Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            booth: {
+              black: '#141315',
+              dark: '#1b1a1c',
+              panel: '#222124',
+              card: '#2c2b2e',
+              border: '#3c3a3f',
+              hover: '#353438',
+              pink: '#db2777',
+              pinkBright: '#e11d48',
+              accent: '#d82b6b',
+              accentHover: '#c0225d',
+              olive: '#8aa14b',
+              cherry: '#8a233b',
+              cherryDark: '#70192e',
+              textDim: '#9e9ca3',
+              textMuted: '#6f6d74'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom styling overrides and bespoke photobooth aesthetic */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: #1b1a1c;
+      color: #f1f0f4;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1b1a1c;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3c3a3f;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #57545b;
+    }
+
+    /* Diagonal watermark overlay in preview window */
+    .preview-watermark {
+      position: absolute;
+      transform: rotate(-26deg);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: rgba(255, 255, 255, 0.17);
+      font-size: 1.35rem;
+      pointer-events: none;
+      white-space: nowrap;
+      user-select: none;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Print strip decorative border patterns */
+    .strip-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 0);
+      background-size: 8px 8px;
+    }
+
+    .doodle-border {
+      position: relative;
+    }
+    .doodle-border::before {
+      content: "★";
+      position: absolute;
+      bottom: 25px;
+      left: -2px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .doodle-border::after {
+      content: "♥";
+      position: absolute;
+      top: 50px;
+      right: 2px;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Smooth Modal Transitions */
+    .modal-backdrop-blur {
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col justify-between overflow-hidden bg-[#1b1a1c] text-[#f1f0f4]">
+
+  <!-- Top System Window Bar -->
+  <header class="h-9 bg-[#141315] border-b border-[#2a292d] flex items-center justify-between px-3 shrink-0 select-none z-30">
+    <div class="flex items-center gap-2.5">
+      <!-- LumaBooth / dslrBooth Logo Icon -->
+      <div class="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] shadow-sm shadow-[#d82b6b]/40">
+        <i class="fa-solid fa-camera text-white text-xs"></i>
+      </div>
+      <span class="text-xs font-semibold tracking-wide text-zinc-200">LumaBooth (dslrBooth) – Saved Events</span>
+    </div>
+
+    <!-- OS Window Control Icons -->
+    <div class="flex items-center -mr-1">
+      <button class="w-9 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors" title="Minimize">
+        <i class="fa-solid fa-minus text-[11px]"></i>
+      </button>
+      <button class="w-9 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors" title="Maximize">
+        <i class="fa-regular fa-square text-[10px]"></i>
+      </button>
+      <button class="w-9 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-rose-600 transition-colors" title="Close">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Action Header Toolbar -->
+  <section class="h-16 px-6 bg-[#1b1a1c] border-b border-[#2c2b2f] flex items-center justify-between gap-4 shrink-0">
+    <div class="flex items-center gap-4 lg:gap-7 flex-wrap">
+      <span class="text-[17px] font-bold tracking-tight text-white">Your events</span>
+
+      <!-- Action Buttons Row -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button class="px-4 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2f2e32] hover:border-zinc-400 active:scale-95 text-xs font-medium text-zinc-200 transition">
+          Select All
+        </button>
+        <button id="rename-btn" class="px-4 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2f2e32] hover:border-zinc-400 active:scale-95 text-xs font-medium text-zinc-200 transition">
+          Rename event
+        </button>
+        <button id="delete-btn" class="px-4 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2f2e32] hover:border-zinc-400 active:scale-95 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
+          <i class="fa-regular fa-trash-can text-zinc-400"></i> Delete
+        </button>
+        <button id="duplicate-btn" class="px-4 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2f2e32] hover:border-zinc-400 active:scale-95 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
+          <i class="fa-regular fa-copy text-zinc-400"></i> Duplicate
+        </button>
+        <!-- Open Modal Trigger -->
+        <button id="open-new-event-btn" class="px-4 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2f2e32] hover:border-zinc-400 active:scale-95 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5 group">
+          <i class="fa-solid fa-plus text-zinc-400 group-hover:text-white transition"></i> New event
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Launch Action -->
+    <button class="btn-launch-event" onclick="window.location.href='kiosk.html'">
+  <i class="fa-solid fa-bolt"></i> Launch Event
+    </button> 
+  </section>
+
+  <!-- Main Grid Workspace -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-5 p-5 overflow-hidden">
+
+    <!-- COLUMN 1: Events Explorer & Filters -->
+    <aside class="md:col-span-3 flex flex-col gap-4 overflow-y-auto pr-1">
+      <div class="flex items-center gap-2">
+        <button class="px-3.5 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2e2d31] text-xs font-medium text-zinc-200 flex items-center gap-1.5 shrink-0 transition">
+          <i class="fa-solid fa-arrow-down-a-z text-zinc-400"></i> Sort by name
+        </button>
+        
+        <div class="relative flex-1">
+          <select class="w-full appearance-none px-3.5 py-1.5 rounded-full border border-zinc-600/80 bg-[#252427] hover:bg-[#2e2d31] text-xs font-medium text-zinc-200 pr-7 outline-none cursor-pointer">
+            <option>All time</option>
+            <option>Past 7 days</option>
+            <option>Past month</option>
+            <option>Past year</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-zinc-400 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- Search Field with Underline Style -->
+      <div class="relative mt-1">
+        <input 
+          id="event-search-input"
+          type="text" 
+          placeholder="Find your event" 
+          class="w-full bg-transparent border-b border-zinc-700 focus:border-[#d82b6b] py-2 px-1 text-sm italic placeholder-zinc-500 text-zinc-200 outline-none transition"
+        >
+        <i class="fa-solid fa-magnifying-glass absolute right-1 top-2.5 text-zinc-400 text-sm pointer-events-none"></i>
+      </div>
+
+      <!-- Saved Event Cards List -->
+      <div id="events-list" class="flex flex-col gap-2.5 mt-2">
+        
+        <!-- Active Wedding Event Card -->
+        <div class="event-card active group relative bg-[#272629] p-3.5 rounded-xl border border-[#d82b6b] shadow-md shadow-[#d82b6b]/10 cursor-pointer flex items-center gap-3.5 transition-all">
+          <div class="w-6 h-6 rounded-full bg-white text-zinc-900 flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fa-solid fa-check text-[11px] font-bold"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="event-title text-sm font-semibold text-white truncate">wedding event</h4>
+            <div class="flex items-center gap-3 text-[11px] text-zinc-400 mt-0.5">
+              <span>1 month ago</span>
+              <span class="flex items-center gap-1.5 text-zinc-400">
+                <i class="fa-solid fa-laptop text-[10px]"></i> LAPTOP-M8RRI1FC
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Mock Events -->
+        <div class="event-card group relative bg-[#252427] hover:bg-[#2c2b2f] p-3.5 rounded-xl border border-zinc-700/60 cursor-pointer flex items-center gap-3.5 transition-all">
+          <div class="w-6 h-6 rounded-full border border-zinc-600 flex items-center justify-center shrink-0 group-hover:border-zinc-400">
+            <i class="fa-solid fa-check text-[11px] text-transparent group-hover:text-zinc-600 transition"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="event-title text-sm font-medium text-zinc-300 group-hover:text-white truncate">Corporate Gala 2026</h4>
+            <div class="flex items-center gap-3 text-[11px] text-zinc-500 mt-0.5">
+              <span>2 months ago</span>
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-laptop text-[10px]"></i> PHOTO-STATION-01
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="event-card group relative bg-[#252427] hover:bg-[#2c2b2f] p-3.5 rounded-xl border border-zinc-700/60 cursor-pointer flex items-center gap-3.5 transition-all">
+          <div class="w-6 h-6 rounded-full border border-zinc-600 flex items-center justify-center shrink-0 group-hover:border-zinc-400">
+            <i class="fa-solid fa-check text-[11px] text-transparent group-hover:text-zinc-600 transition"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="event-title text-sm font-medium text-zinc-300 group-hover:text-white truncate">Sweet 16 Birthday Party</h4>
+            <div class="flex items-center gap-3 text-[11px] text-zinc-500 mt-0.5">
+              <span>3 months ago</span>
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-tablet-screen-button text-[10px]"></i> IPAD-BOOTH-PRO
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- COLUMN 2: Capture Stage & Configuration Panel -->
+    <section class="md:col-span-5 lg:col-span-6 flex flex-col overflow-y-auto px-1">
+      <h3 class="text-base font-bold text-white mb-2.5">Capture</h3>
+
+      <!-- Live Capture Stage / Viewfinder -->
+      <div class="relative w-full aspect-[16/9] bg-[#1d1c1e] rounded-lg border border-[#3b3a3e] flex items-center justify-center overflow-hidden shadow-inner group">
+        <!-- Top Left Picture Placeholders -->
+        <div class="absolute top-3 left-3 text-zinc-600 group-hover:text-zinc-500 transition">
+          <i class="fa-regular fa-images text-2xl"></i>
+        </div>
+
+        <!-- Translucent Rotated Watermark -->
+        <div class="preview-watermark select-none text-center">
+          dslrBooth Demo. Subscribe to remove watermark.
+        </div>
+
+        <!-- 4 Capture Action Nodes in Viewport -->
+        <div class="relative z-10 flex items-center gap-4 lg:gap-6">
+          <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
+            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+              <i class="fa-solid fa-camera text-sm"></i>
+            </div>
+            <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">Print</span>
+          </div>
+
+          <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
+            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+              <i class="fa-solid fa-layer-group text-xs"></i>
+            </div>
+            <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">GIF</span>
+          </div>
+
+          <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
+            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+              <i class="fa-solid fa-arrows-spin text-sm"></i>
+            </div>
+            <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">360/Slow-mo</span>
+          </div>
+
+          <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
+            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+              <i class="fa-solid fa-video text-xs"></i>
+            </div>
+            <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">Video</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode Quick Switcher Row -->
+      <div class="flex items-center justify-around py-5">
+        <button class="mode-tab flex flex-col items-center gap-1.5 text-[#d82b6b] hover:scale-105 transition" data-mode="Photo">
+          <i class="fa-regular fa-image text-3xl"></i>
+          <span class="text-xs font-semibold">Photo</span>
+        </button>
+
+        <button class="mode-tab flex flex-col items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition" data-mode="GIF">
+          <i class="fa-regular fa-clone text-3xl"></i>
+          <span class="text-xs font-semibold">GIF</span>
+        </button>
+
+        <button class="mode-tab flex flex-col items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition" data-mode="360">
+          <i class="fa-solid fa-compact-disc text-3xl"></i>
+          <span class="text-xs font-semibold">360/Slow-mo</span>
+        </button>
+
+        <button class="mode-tab flex flex-col items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition" data-mode="Video">
+          <i class="fa-solid fa-video text-3xl"></i>
+          <span class="text-xs font-semibold">Video</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="h-px bg-zinc-700/60 my-1"></div>
+
+      <!-- Dual Column Features & Settings -->
+      <div class="grid grid-cols-2 gap-6 pt-4 text-xs">
+        <!-- Feature Sub-options -->
+        <div class="flex flex-col gap-2.5 font-medium text-zinc-300">
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>AI Portraits</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Effects</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Digital Props</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Beauty Filter</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Watermark</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Post Processing</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+            <span>Disclaimer</span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+          </div>
+        </div>
+
+        <!-- Sharing Configuration Summary -->
+        <div class="flex flex-col gap-2">
+          <h4 class="font-bold text-white text-xs mb-1">Sharing Configuration</h4>
+
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-check text-[#d82b6b] font-bold mt-0.5"></i>
+            <div>
+              <span class="font-bold text-white block">Email</span>
+              <p class="text-zinc-400 mt-0.5">Reply to: <span class="text-zinc-300 font-mono">no-reply@mail.fotoshare.co</span></p>
+              <p class="text-zinc-400 mt-0.5">Subject: <span class="text-zinc-300">Here is your photo</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5 mt-2">
+            <i class="fa-solid fa-check text-[#d82b6b] font-bold mt-0.5"></i>
+            <div>
+              <span class="font-bold text-white block">SMS</span>
+              <p class="text-zinc-400 mt-0.5">Twilio / Cloud Gateway active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 3: Printing Templates Strips -->
+    <aside class="md:col-span-4 lg:col-span-3 flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between mb-2.5">
+        <h3 class="text-base font-bold text-white">Printing</h3>
+        <span class="text-xs text-zinc-400">3 layouts</span>
+      </div>
+
+      <!-- Horizontal Gallery of Realistic Print Strips -->
+      <div class="flex-1 flex gap-3.5 overflow-x-auto pb-4 pt-1 items-start">
+
+        <!-- Template 1: Classic Single Polar Style -->
+        <div class="template-choice shrink-0 w-28 bg-[#f5f5f5] p-2 rounded shadow-md border-2 border-transparent hover:border-[#d82b6b] transition-all cursor-pointer">
+          <div class="w-full flex flex-col gap-1.5">
+            <div class="h-20 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-2xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-36 bg-white rounded-sm border border-dashed border-zinc-300 flex items-center justify-center text-[10px] text-zinc-400 text-center px-1">
+              Custom Logo Area
+            </div>
+          </div>
+        </div>
+
+        <!-- Template 2: Traditional 3-Up Strip (Dark Crimson Plaid Themed) -->
+        <div class="template-choice selected shrink-0 w-28 bg-[#70192e] p-2 rounded shadow-lg border-2 border-[#d82b6b] transition-all cursor-pointer relative strip-pattern doodle-border">
+          <div class="w-full flex flex-col gap-2">
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <!-- Bottom decorative banner -->
+            <div class="h-6 bg-pink-100/90 rounded-sm flex items-center justify-center text-[9px] text-[#70192e] font-bold tracking-tight">
+              x x x x x x x x x
+            </div>
+          </div>
+        </div>
+
+        <!-- Template 3: 3-Up Strip Variant (Rich Burgundy Pattern) -->
+        <div class="template-choice shrink-0 w-28 bg-[#8a233b] p-2 rounded shadow-md border-2 border-transparent hover:border-[#d82b6b] transition-all cursor-pointer relative strip-pattern doodle-border">
+          <div class="w-full flex flex-col gap-2">
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
+              1
+            </div>
+            <div class="h-6 bg-white/90 rounded-sm flex items-center justify-center text-[9px] text-[#8a233b] font-bold">
+              Wedding Strip
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- "Create New Event" Modal Backdrop & Dialog -->
+  <div id="new-event-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 modal-backdrop-blur opacity-0 pointer-events-none transition-opacity duration-200">
+    
+    <div id="modal-container" class="relative w-full max-w-[560px] bg-[#222124] rounded-2xl border border-zinc-700/80 shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200">
+      
+      <!-- Top Close Button (X) -->
+      <button id="close-modal-btn" class="absolute top-5 right-5 text-zinc-400 hover:text-white transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-800" aria-label="Close dialog">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- Main Modal Content -->
+      <div class="pt-10 pb-8 px-10 flex flex-col items-center text-center">
+        <h2 class="text-2xl font-bold text-white tracking-tight">Create new event</h2>
+        <p class="text-sm font-semibold text-zinc-100 mt-5">What would you like to call it?</p>
+
+        <!-- Underlined Event Name Input -->
+        <div class="w-full max-w-sm mt-8 border-b border-zinc-600 focus-within:border-[#d82b6b] transition-colors">
+          <input 
+            type="text" 
+            id="modal-event-name" 
+            placeholder="Name of event" 
+            class="w-full bg-transparent text-center text-base text-white placeholder-zinc-500 py-1.5 outline-none font-medium"
+            autocomplete="off"
+          >
+        </div>
+
+        <!-- Customize Settings Pill Button -->
+        <button id="modal-customize-btn" class="mt-9 px-7 py-2.5 rounded-full border border-zinc-500 hover:border-zinc-300 bg-transparent hover:bg-zinc-800 text-sm font-semibold text-zinc-100 transition active:scale-95">
+          Customize settings
+        </button>
+
+        <!-- Divider 'or' -->
+        <span class="text-xs font-medium text-zinc-400 my-3 select-none">or</span>
+
+        <!-- Launch Event Main Pink Action Button -->
+        <button id="modal-launch-btn" class="px-8 py-2.5 rounded-full bg-[#d82b6b] hover:bg-[#be215b] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#d82b6b]/30 transition active:scale-95">
+          <i class="fa-solid fa-bolt text-xs"></i> Launch Event
+        </button>
+      </div>
+
+      <!-- Bottom LumaBooth Dashboard Sync Banner -->
+      <div class="bg-[#171618] border-t border-zinc-800/80 px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 text-left">
+          <!-- 4-Square App Dashboard Icon -->
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#d82b6b] to-[#ec4899] flex items-center justify-center shrink-0 shadow-md">
+            <i class="fa-solid fa-table-cells-large text-white text-base"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white">Manage on LumaBooth Dashboard</div>
+            <div class="text-[11px] text-zinc-400">Configure and sync from any browser</div>
+          </div>
+        </div>
+
+        <button class="shrink-0 px-3.5 py-1.5 rounded-full border border-zinc-600 hover:border-zinc-400 bg-transparent text-[11px] font-semibold text-zinc-200 flex items-center gap-1.5 hover:bg-zinc-800 transition">
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> LumaBooth Dashboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const openModalBtn = document.getElementById('open-new-event-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modal = document.getElementById('new-event-modal');
+    const modalContainer = document.getElementById('modal-container');
+    const eventNameInput = document.getElementById('modal-event-name');
+    const modalLaunchBtn = document.getElementById('modal-launch-btn');
+    const modalCustomizeBtn = document.getElementById('modal-customize-btn');
+    const eventsList = document.getElementById('events-list');
+    const searchInput = document.getElementById('event-search-input');
+
+    // Open Modal
+    function showModal() {
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalContainer.classList.remove('scale-95');
+      modalContainer.classList.add('scale-100');
+      eventNameInput.value = '';
+      setTimeout(() => eventNameInput.focus(), 80);
+    }
+
+    // Close Modal
+    function hideModal() {
+      modalContainer.classList.remove('scale-100');
+      modalContainer.classList.add('scale-95');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    openModalBtn.addEventListener('click', showModal);
+    closeModalBtn.addEventListener('click', hideModal);
+
+    // Close on clicking backdrop outside modal dialog
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        hideModal();
+      }
+    });
+
+    // Close on Escape Key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideModal();
+      }
+    });
+
+    // Handle Creating and Adding Event
+    function createEventFromModal() {
+      const name = eventNameInput.value.trim() || 'Untitled event';
+
+      // Remove active ring from existing cards
+      document.querySelectorAll('.event-card').forEach(card => {
+        card.classList.remove('active', 'border-[#d82b6b]');
+        card.classList.add('border-zinc-700/60');
+        const iconContainer = card.querySelector('.rounded-full');
+        if (iconContainer) {
+          iconContainer.className = 'w-6 h-6 rounded-full border border-zinc-600 flex items-center justify-center shrink-0 group-hover:border-zinc-400';
+          iconContainer.innerHTML = '<i class="fa-solid fa-check text-[11px] text-transparent group-hover:text-zinc-600 transition"></i>';
+        }
+      });
+
+      // Insert new element on top
+      const newCard = document.createElement('div');
+      newCard.className = 'event-card active group relative bg-[#272629] p-3.5 rounded-xl border border-[#d82b6b] shadow-md shadow-[#d82b6b]/10 cursor-pointer flex items-center gap-3.5 transition-all';
+      newCard.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-white text-zinc-900 flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-check text-[11px] font-bold"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="event-title text-sm font-semibold text-white truncate">${name}</h4>
+          <div class="flex items-center gap-3 text-[11px] text-zinc-400 mt-0.5">
+            <span>Just now</span>
+            <span class="flex items-center gap-1.5 text-zinc-400">
+              <i class="fa-solid fa-laptop text-[10px]"></i> LAPTOP-M8RRI1FC
+            </span>
+          </div>
+        </div>
+      `;
+
+      eventsList.prepend(newCard);
+      attachCardClick(newCard);
+      hideModal();
+    }
+
+    modalLaunchBtn.addEventListener('click', createEventFromModal);
+    modalCustomizeBtn.addEventListener('click', createEventFromModal);
+    eventNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        createEventFromModal();
+      }
+    });
+
+    // Make Cards Selectable
+    function attachCardClick(card) {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.event-card').forEach(c => {
+          c.classList.remove('active', 'border-[#d82b6b]', 'bg-[#272629]');
+          c.classList.add('border-zinc-700/60', 'bg-[#252427]');
+          const icon = c.querySelector('.rounded-full');
+          if (icon) {
+            icon.className = 'w-6 h-6 rounded-full border border-zinc-600 flex items-center justify-center shrink-0 group-hover:border-zinc-400';
+            icon.innerHTML = '<i class="fa-solid fa-check text-[11px] text-transparent group-hover:text-zinc-600 transition"></i>';
+          }
+        });
+
+        card.classList.add('active', 'border-[#d82b6b]', 'bg-[#272629]');
+        card.classList.remove('border-zinc-700/60');
+        const icon = card.querySelector('.rounded-full');
+        if (icon) {
+          icon.className = 'w-6 h-6 rounded-full bg-white text-zinc-900 flex items-center justify-center shrink-0 shadow-sm';
+          icon.innerHTML = '<i class="fa-solid fa-check text-[11px] font-bold"></i>';
+        }
+      });
+    }
+
+    document.querySelectorAll('.event-card').forEach(attachCardClick);
+
+    // Live Event Search Filter
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('.event-card').forEach(card => {
+        const title = card.querySelector('.event-title').textContent.toLowerCase();
+        if (title.includes(term)) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+
+    // Mode Switcher Interactions
+    const modeTabs = document.querySelectorAll('.mode-tab');
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        modeTabs.forEach(t => {
+          t.classList.remove('text-[#d82b6b]', 'scale-105');
+          t.classList.add('text-zinc-400');
+        });
+        tab.classList.add('text-[#d82b6b]', 'scale-105');
+        tab.classList.remove('text-zinc-400');
+      });
+    });
+
+    // Print Template Strip Selection
+    const templateStrips = document.querySelectorAll('.template-choice');
+    templateStrips.forEach(strip => {
+      strip.addEventListener('click', () => {
+        templateStrips.forEach(s => {
+          s.classList.remove('border-[#d82b6b]', 'shadow-lg');
+          s.classList.add('border-transparent');
+        });
+        strip.classList.add('border-[#d82b6b]', 'shadow-lg');
+        strip.classList.remove('border-transparent');
+      });
+    });
+  </script>
+</body>
+</html>

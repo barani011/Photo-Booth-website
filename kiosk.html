@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LumaBooth (dslrBooth) - Start</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #222123;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+    }
+
+    .kiosk-screen {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #222123;
+      overflow: hidden;
+    }
+
+    /* Webcam feed */
+    #camera-feed {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.15;
+      z-index: 1;
+    }
+
+    /* Watermark */
+    .watermark-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .watermark-text {
+      color: rgba(255, 255, 255, 0.38);
+      font-size: clamp(26px, 4.5vw, 60px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
+      transform: rotate(-30deg);
+      user-select: none;
+    }
+
+    /* Action Buttons Row */
+    .modes-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(24px, 4.5vw, 54px);
+      z-index: 5;
+    }
+
+    .mode-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      outline: none;
+    }
+
+    .mode-icon-circle {
+      width: clamp(86px, 9.5vw, 130px);
+      height: clamp(86px, 9.5vw, 130px);
+      border-radius: 50%;
+      background-color: #d82b6b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    .mode-card:hover .mode-icon-circle {
+      transform: scale(1.08);
+      background-color: #e23777;
+    }
+
+    .mode-icon-circle svg {
+      width: clamp(38px, 4.2vw, 56px);
+      height: clamp(38px, 4.2vw, 56px);
+      stroke: #ffffff;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .mode-label {
+      color: #d82b6b;
+      font-size: clamp(14px, 1.4vw, 20px);
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    /* ================= Top Settings Overlay Panel ================= */
+    .settings-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: #171617;
+      color: #eae9ea;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      transform: translateY(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .settings-panel.open {
+      transform: translateY(0);
+    }
+
+    /* Panel Title Bar */
+    .panel-titlebar {
+      height: 38px;
+      background-color: #100f10;
+      border-bottom: 1px solid #232224;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 13px;
+      color: #ddd;
+    }
+
+    .panel-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 22px;
+      height: 22px;
+      background-color: #d82b6b;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #928f95;
+    }
+
+    .window-btn {
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* Panel Secondary Header */
+    .panel-subheader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 28px;
+      border-bottom: 1px solid #282729;
+    }
+
+    .event-dropdown-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .event-name-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .event-name-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #d82b6b;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .cloud-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: #c2c0c4;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .panel-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .icon-tool-btn {
+      background: none;
+      border: none;
+      color: #c2c0c4;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .icon-tool-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .camera-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e4e3e5;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .camera-selector svg.cam-icon {
+      width: 20px;
+      height: 20px;
+      stroke: #ffffff;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .camera-selector svg.arrow-icon {
+      width: 14px;
+      height: 14px;
+      stroke: #d82b6b;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .btn-lock {
+      background: none;
+      border: 1.5px solid #d5d3d7;
+      color: #ffffff;
+      padding: 8px 24px;
+      border-radius: 22px;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .btn-lock svg {
+      width: 17px;
+      height: 17px;
+      stroke: #ffffff;
+      stroke-width: 2.2;
+      fill: none;
+    }
+
+    /* Links Columns Grid */
+    .settings-columns-container {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      padding: 22px 28px 28px;
+      gap: 20px;
+    }
+
+    .nav-col {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .col-header-pink {
+      color: #d82b6b;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .col-header-grey {
+      color: #7b797e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .nav-link-item {
+      color: #e4e3e5;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+
+    .nav-link-item:hover {
+      color: #d82b6b;
+    }
+
+    .nav-link-item svg {
+      width: 12px;
+      height: 12px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    /* Floating Toggle Button (Pink Circle with Chevron) */
+    .btn-toggle-panel {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: #d82b6b;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 150;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      transition: background-color 0.15s ease, transform 0.2s ease, top 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-toggle-panel:hover {
+      background-color: #be205b;
+      transform: scale(1.05);
+    }
+
+    .btn-toggle-panel svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.3s ease;
+    }
+
+    /* When panel opens: position arrow right at panel edge and flip upwards */
+    .settings-panel.open ~ .btn-toggle-panel {
+      top: 310px;
+    }
+
+    .settings-panel.open ~ .btn-toggle-panel svg {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kiosk-screen">
+    <!-- Camera stream -->
+    <video id="camera-feed" autoplay playsinline muted></video>
+
+    <!-- Top Settings Dropdown Panel -->
+    <div class="settings-panel" id="settings-panel">
+      <!-- Titlebar -->
+      <div class="panel-titlebar">
+        <div class="panel-brand">
+          <div class="brand-logo">🐾</div>
+          <span>LumaBooth (dslrBooth) - Start</span>
+        </div>
+        <div class="window-controls">
+          <span class="window-btn">—</span>
+          <span class="window-btn">▢</span>
+          <span class="window-btn">✕</span>
+        </div>
+      </div>
+
+      <!-- Event info + tools header -->
+      <div class="panel-subheader">
+        <div class="event-dropdown-area">
+          <button class="event-name-btn">
+            wedding event
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="cloud-icon" title="Synced">
+            <svg viewBox="0 0 24 24">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="panel-quick-actions">
+          <button class="icon-tool-btn" title="Copy link">
+            <svg viewBox="0 0 24 24">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </button>
+
+          <button class="icon-tool-btn" title="Share event">
+            <svg viewBox="0 0 24 24">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+
+          <div class="camera-selector">
+            <svg class="cam-icon" viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>USB2.0 HD UVC Web...</span>
+            <svg class="arrow-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+
+          <button class="btn-lock">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Lock
+          </button>
+        </div>
+      </div>
+
+      <!-- Links Grid -->
+      <div class="settings-columns-container">
+        <!-- Col 1 -->
+        <div class="nav-col">
+          <div class="col-header-pink">Screen Editor</div>
+          <div class="col-header-grey">SETUP</div>
+          <a class="nav-link-item">General</a>
+          <a class="nav-link-item" href="capture-settings.html">Capture Settings</a>
+          <a class="nav-link-item" href="camera-settings.html">Camera Settings</a>
+          <a class="nav-link-item">Virtual Attendant</a>
+        </div>
+
+        <!-- Col 2 -->
+        <div class="nav-col">
+          <a class="col-header-pink" href="photo-layout.html">Photo Layout</a>
+          <div class="col-header-grey">PROCESS</div>
+          <a class="nav-link-item">Effects & Stickers</a>
+          <a class="nav-link-item">AI Portraits</a>
+          <a class="nav-link-item">Background Removal</a>
+          <a class="nav-link-item">Survey</a>
+          <a class="nav-link-item">Disclaimer</a>
+        </div>
+
+        <!-- Col 3 -->
+        <div class="nav-col">
+          <div class="col-header-grey" style="margin-top: 22px;">SHARING ADD-ONS</div>
+          <a class="nav-link-item">Sharing Settings</a>
+          <a class="nav-link-item">Print Setup</a>
+          <a class="nav-link-item">Slideshow</a>
+        </div>
+
+        <!-- Col 4 -->
+        <div class="nav-col">
+          <div class="col-header-grey" style="margin-top: 22px;">EVENT</div>
+          <a class="nav-link-item">Sharing Status</a>
+          <a class="nav-link-item">Export Event</a>
+          <a class="nav-link-item">Event folder</a>
+        </div>
+
+        <!-- Col 5 -->
+        <div class="nav-col">
+          <div class="col-header-grey" style="margin-top: 22px;">MORE</div>
+          <a class="nav-link-item">Remote Control</a>
+          <a class="nav-link-item">Show Lock Screen</a>
+          <a class="nav-link-item">Language</a>
+        </div>
+
+        <!-- Col 6 -->
+        <div class="nav-col">
+          <div class="col-header-grey" style="margin-top: 22px;">ACCOUNT</div>
+          <a class="nav-link-item">Subscribe</a>
+          <a class="nav-link-item">About LumaBooth</a>
+          <a class="nav-link-item">
+            Help
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Right Toggle Button (Toggles Down/Up chevron) -->
+    <button class="btn-toggle-panel" id="toggle-settings-btn" title="Toggle Settings">
+      <svg id="toggle-icon" viewBox="0 0 24 24">
+        <path d="M6 9l6 6 6-6"></path>
+      </svg>
+    </button>
+
+    <!-- Diagonal Watermark -->
+    <div class="watermark-container">
+      <div class="watermark-text">dslrBooth Demo. Subscribe to remove watermark.</div>
+    </div>
+
+    <!-- 4 Capture Action Modes -->
+    <div class="modes-container">
+      <button class="mode-card" onclick="selectMode('Print')">
+        <div class="mode-icon-circle">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <circle cx="12" cy="12" r="4.5"></circle>
+            <circle cx="17.5" cy="6.5" r="1.2" fill="#fff"></circle>
+          </svg>
+        </div>
+        <span class="mode-label">Print</span>
+      </button>
+
+      <button class="mode-card" onclick="selectMode('GIF')">
+        <div class="mode-icon-circle">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="6" width="15" height="15" rx="3" ry="3"></rect>
+            <path d="M7 6V4a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-2"></path>
+          </svg>
+        </div>
+        <span class="mode-label">GIF</span>
+      </button>
+
+      <button class="mode-card" onclick="selectMode('360/Slow-mo')">
+        <div class="mode-icon-circle">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <path d="M12 4a8 8 0 1 1-7.2 4.5"></path>
+            <circle cx="4.8" cy="8.5" r="1.5" fill="#fff"></circle>
+            <circle cx="19.2" cy="15.5" r="1.5" fill="#fff"></circle>
+          </svg>
+        </div>
+        <span class="mode-label">360/Slow-mo</span>
+      </button>
+
+      <button class="mode-card" onclick="selectMode('Video')">
+        <div class="mode-icon-circle">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="5" width="13" height="14" rx="3" ry="3"></rect>
+            <polygon points="22 7 15 12 22 17 22 7" fill="#fff"></polygon>
+          </svg>
+        </div>
+        <span class="mode-label">Video</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const settingsPanel = document.getElementById('settings-panel');
+    const toggleBtn = document.getElementById('toggle-settings-btn');
+
+    // Toggle dropdown open/close on button click
+    toggleBtn.addEventListener('click', () => {
+      settingsPanel.classList.toggle('open');
+    });
+
+    // Close settings on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
+        settingsPanel.classList.remove('open');
+      }
+    });
+
+    // Mode Navigation
+    function selectMode(mode) {
+      if (mode === 'Print') {
+        window.location.href = 'template.html';
+      } else {
+        alert(`Starting ${mode} mode...`);
+      }
+    }
+
+    // Camera Stream
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+        .then(stream => {
+          document.getElementById('camera-feed').srcObject = stream;
+        })
+        .catch(() => {});
+    }
+  </script>
+</body>
+</html>
