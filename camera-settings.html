@@ -75,6 +75,7 @@
       background-color: #1a191b;
       border-bottom: 1px solid #282729;
       z-index: 10;
+      position: relative;
     }
 
     .nav-link {
@@ -132,6 +133,48 @@
       stroke: #fff;
       stroke-width: 2.8;
       fill: none;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-toggle-circle[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+
+    .settings-options-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 24px;
+      z-index: 30;
+      width: 220px;
+      padding: 6px;
+      border: 1px solid #454348;
+      border-radius: 8px;
+      background: #272628;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .settings-options-menu.open {
+      display: block;
+    }
+
+    .settings-options-menu button {
+      display: block;
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #eae9eb;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .settings-options-menu button:hover,
+    .settings-options-menu button:focus-visible {
+      background: #38363b;
+      outline: none;
     }
 
     /* Main Viewport Split */
@@ -326,9 +369,16 @@
         Virtual Attendant
         <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </button>
-      <button class="btn-toggle-circle" onclick="window.history.back()" title="Back">
+      <button id="settings-options-toggle" class="btn-toggle-circle" onclick="toggleSettingsOptions()" title="Open settings options" aria-label="Open settings options" aria-expanded="false" aria-haspopup="menu" aria-controls="settings-options-menu">
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
+      <div id="settings-options-menu" class="settings-options-menu" role="menu" aria-label="Camera settings options">
+        <button type="button" role="menuitem" onclick="focusSettingSection('webcam-setting')">Enable Webcams</button>
+        <button type="button" role="menuitem" onclick="focusSettingSection('resolution-setting')">Webcam Resolution</button>
+        <button type="button" role="menuitem" onclick="focusSettingSection('mirror-setting')">Mirror Live View</button>
+        <button type="button" role="menuitem" onclick="focusSettingSection('rotation-setting')">Rotation</button>
+        <button type="button" role="menuitem" onclick="focusSettingSection('audio-setting')">Audio Input</button>
+      </div>
     </div>
   </div>
 
@@ -338,7 +388,7 @@
     <!-- Left Settings Column -->
     <aside class="controls-sidebar">
       <!-- Enable Webcams -->
-      <div class="setting-group">
+      <div class="setting-group" id="webcam-setting" tabindex="-1">
         <div class="setting-row">
           <span class="label-title">Enable Webcams</span>
           <div class="switch-wrap">
@@ -353,7 +403,7 @@
       </div>
 
       <!-- Webcam Resolution -->
-      <div class="setting-group">
+      <div class="setting-group" id="resolution-setting" tabindex="-1">
         <span class="label-title">Webcam Resolution</span>
         <input type="range" min="1" max="100" value="100" class="range-control" id="res-slider">
         <div class="range-labels">
@@ -363,7 +413,7 @@
       </div>
 
       <!-- Mirror Live View -->
-      <div class="setting-group">
+      <div class="setting-group" id="mirror-setting" tabindex="-1">
         <div class="setting-row">
           <span class="label-title">Mirror Live View</span>
           <div class="switch-wrap">
@@ -377,7 +427,7 @@
       </div>
 
       <!-- Rotation -->
-      <div class="setting-group">
+      <div class="setting-group" id="rotation-setting" tabindex="-1">
         <span class="label-title">Rotation</span>
         <select class="custom-select" id="select-rotation" onchange="updateRotation(this.value)">
           <option value="0">0 degrees</option>
@@ -388,7 +438,7 @@
       </div>
 
       <!-- Audio Input -->
-      <div class="setting-group">
+      <div class="setting-group" id="audio-setting" tabindex="-1">
         <span class="label-title">Audio Input</span>
         <select class="custom-select" id="audio-input-select">
           <option>Microphone Array (AMD Audio Device)</option>
@@ -407,9 +457,36 @@
   <script>
     const video = document.getElementById('webcam-view');
     const noCamMsg = document.getElementById('no-cam-msg');
+    const settingsOptionsButton = document.getElementById('settings-options-toggle');
+    const settingsOptionsMenu = document.getElementById('settings-options-menu');
     let currentStream = null;
     let currentRotation = 0;
     let isMirrored = false;
+
+    function toggleSettingsOptions() {
+      const isOpen = settingsOptionsMenu.classList.toggle('open');
+      settingsOptionsButton.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function focusSettingSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      section?.focus({ preventScroll: true });
+      settingsOptionsMenu.classList.remove('open');
+      settingsOptionsButton.setAttribute('aria-expanded', 'false');
+    }
+
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('#settings-options-menu, #settings-options-toggle')) return;
+      settingsOptionsMenu.classList.remove('open');
+      settingsOptionsButton.setAttribute('aria-expanded', 'false');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      settingsOptionsMenu.classList.remove('open');
+      settingsOptionsButton.setAttribute('aria-expanded', 'false');
+    });
 
     // 1. Start live webcam stream
     async function initCamera() {
