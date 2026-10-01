@@ -293,6 +293,7 @@
         if (cameras.length) shotNumbers = cameras;
       } catch(e) {}
       try { sessionStorage.removeItem(CAPTURE_PHOTO_IDS_KEY); } catch(e) {}
+      try { sessionStorage.removeItem('lumabooth_final_photo_result_v1'); } catch(e) {}
     }
 
     // 1. Initialize Camera

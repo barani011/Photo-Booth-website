@@ -32,6 +32,18 @@
       flex-direction: column;
     }
 
+    #qr-download-dialog {
+      width: min(92vw, 420px);
+      padding: 24px;
+      border: 1px solid #454249;
+      border-radius: 8px;
+      background: #222125;
+      color: #fff;
+      text-align: center;
+    }
+    #qr-download-dialog::backdrop { background: rgba(0, 0, 0, 0.78); }
+    #qr-code-image { width: 240px; height: 240px; margin: 18px auto; background: #fff; }
+
     /* Print media query: prints only the final composite strip cleanly */
     @media print {
       body * {
@@ -104,6 +116,7 @@
 
     <!-- 3. RIGHT: Share & Print Action Buttons -->
     <aside class="flex flex-col items-end justify-center gap-6 pr-6">
+      <p id="final-photo-status" class="max-w-[240px] text-right text-xs text-[#b3b1b6]" role="status" aria-live="polite">Preparing final photo...</p>
 
       <!-- Email -->
       <button onclick="shareAction('Email')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
@@ -141,6 +154,16 @@
 
   </main>
 
+  <dialog id="qr-download-dialog">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="text-lg font-semibold">Download your photo</h2>
+      <button onclick="document.getElementById('qr-download-dialog').close()" class="rounded border border-[#555159] px-3 py-1.5 text-sm text-white hover:bg-white/10" aria-label="Close QR code">Close</button>
+    </div>
+    <img id="qr-code-image" alt="QR code linking to your photo download">
+    <p class="mb-4 text-sm text-[#b3b1b6]">Scan with your phone to open the download page.</p>
+    <a id="qr-download-link" class="inline-flex rounded bg-[#d82b6b] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Open download page</a>
+  </dialog>
+
   <script>
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
     const ACTIVE_ID_KEY = 'lumabooth_active_template_id_v1';
@@ -150,6 +173,8 @@
     const PHOTO_ASSET_STORE = 'photo_assets';
     const CAPTURED_PHOTO_ID = 'last-captured-photo';
     const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
+    const FINAL_PHOTO_RESULT_KEY = 'lumabooth_final_photo_result_v1';
+    let savedFinalPhoto = null;
 
     function loadDatabaseRecord(storeName, key) {
       return new Promise((resolve, reject) => {
@@ -230,6 +255,7 @@
       if (previewPhoto) document.getElementById('polaroid-preview-img').src = previewPhoto;
 
       renderExactTemplate(template, photosByCamera);
+      if (template) await saveFinalPhoto(template, photosByCamera);
     }
 
     window.addEventListener('DOMContentLoaded', loadShareData);
@@ -311,6 +337,204 @@
       }
     }
 
+    function getFinalImageDimensions(template) {
+      const resolution = Number(template.resolution) || 300;
+      const paperDimensions = {
+        '2x6': [2, 6],
+        '4x6': [4, 6],
+        '5x7': [5, 7],
+        '6x8': [6, 8],
+        '6x6': [6, 6],
+        '8x10': [8, 10]
+      };
+      let [width, height] = template.paperSize === 'Custom'
+        ? [Number(template.customPaperWidth) || 1200, Number(template.customPaperHeight) || 1800]
+        : (paperDimensions[template.paperSize] || [4, 6]).map(inches => inches * resolution);
+      const orientation = template.orientation
+        || ((template.artboardWidth || 380) > (template.artboardHeight || 570) ? 'Horizontal' : 'Vertical');
+      if ((orientation === 'Horizontal' && height > width)
+        || (orientation === 'Vertical' && width > height)) {
+        [width, height] = [height, width];
+      }
+      return { width: Math.round(width), height: Math.round(height) };
+    }
+
+    function loadCanvasImage(source) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('A photo or design image could not be loaded.'));
+        image.src = source;
+      });
+    }
+
+    function drawImageCover(context, image, x, y, width, height) {
+      const scale = Math.max(width / image.width, height / image.height);
+      const sourceWidth = width / scale;
+      const sourceHeight = height / scale;
+      const sourceX = (image.width - sourceWidth) / 2;
+      const sourceY = (image.height - sourceHeight) / 2;
+      context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+    }
+
+    function drawImageContain(context, image, width, height) {
+      const scale = Math.min(width / image.width, height / image.height);
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      context.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+    }
+
+    async function renderFinalPhotoCanvas(template, photosByCamera) {
+      const { width, height } = getFinalImageDimensions(template);
+      const artboardWidth = Number(template.artboardWidth) || 380;
+      const artboardHeight = Number(template.artboardHeight) || 570;
+      const artboardScale = Math.min(width / artboardWidth, height / artboardHeight);
+      const scaleX = artboardScale;
+      const scaleY = artboardScale;
+      const offsetX = (width - artboardWidth * artboardScale) / 2;
+      const offsetY = (height - artboardHeight * artboardScale) / 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not create the final image canvas.');
+
+      context.fillStyle = template.bg || '#ffffff';
+      context.fillRect(0, 0, width, height);
+      if (template.themePattern === 'plaid-red' || ['#882236', '#922b3e'].includes(template.bg)) {
+        context.fillStyle = '#882236';
+        context.fillRect(0, 0, width, height);
+        context.strokeStyle = 'rgba(255,255,255,0.08)';
+        context.lineWidth = Math.max(1, Math.min(scaleX, scaleY) * 20);
+        for (let y = 0; y < height; y += Math.max(1, Math.round(40 * scaleY))) {
+          context.beginPath();
+          context.moveTo(0, y);
+          context.lineTo(width, y);
+          context.stroke();
+        }
+        for (let x = 0; x < width; x += Math.max(1, Math.round(40 * scaleX))) {
+          context.beginPath();
+          context.moveTo(x, 0);
+          context.lineTo(x, height);
+          context.stroke();
+        }
+      }
+
+      const imageCache = new Map();
+      const getImage = async source => {
+        if (!imageCache.has(source)) imageCache.set(source, loadCanvasImage(source));
+        return imageCache.get(source);
+      };
+      const layers = template.layers || [];
+      for (let index = layers.length - 1; index >= 0; index--) {
+        const layer = layers[index];
+        if (layer.visible === false) continue;
+
+        const x = offsetX + (Number(layer.x) || 0) * scaleX;
+        const y = offsetY + (Number(layer.y) || 0) * scaleY;
+        const layerWidth = (Number(layer.w) || 0) * scaleX;
+        const layerHeight = (Number(layer.h) || 0) * scaleY;
+        context.save();
+        context.translate(x + layerWidth / 2, y + layerHeight / 2);
+        context.rotate((Number(layer.rot) || 0) * Math.PI / 180);
+        context.translate(-layerWidth / 2, -layerHeight / 2);
+
+        if (layer.type === 'camera') {
+          const photoSource = photosByCamera.get(String(layer.cameraNumber || 1));
+          if (photoSource) {
+            drawImageCover(context, await getImage(photoSource), 0, 0, layerWidth, layerHeight);
+          } else {
+            context.fillStyle = layer.bg || '#8ea352';
+            context.fillRect(0, 0, layerWidth, layerHeight);
+            context.fillStyle = '#ffffff';
+            context.font = `700 ${Math.max(24, Math.round(layerHeight * 0.35))}px sans-serif`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(String(layer.cameraNumber || 1), layerWidth / 2, layerHeight / 2);
+          }
+          context.strokeStyle = '#ffffff';
+          context.lineWidth = Math.max(1, 2.5 * Math.min(scaleX, scaleY));
+          context.strokeRect(0, 0, layerWidth, layerHeight);
+        } else if (layer.type === 'image' && layer.src) {
+          drawImageContain(context, await getImage(layer.src), layerWidth, layerHeight);
+        } else if (layer.type === 'text') {
+          context.fillStyle = layer.color || '#d82b6b';
+          context.font = `700 ${Math.max(10, (Number(layer.fontSize) || 22) * scaleY)}px Inter, sans-serif`;
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          context.fillText(layer.text || '', layerWidth / 2, layerHeight / 2, layerWidth);
+        } else if (layer.type === 'shape') {
+          const centerX = layerWidth / 2;
+          const centerY = layerHeight / 2;
+          const outerRadius = Math.min(layerWidth, layerHeight) / 2;
+          const innerRadius = outerRadius * 0.42;
+          context.beginPath();
+          for (let point = 0; point < 10; point++) {
+            const radius = point % 2 === 0 ? outerRadius : innerRadius;
+            const angle = -Math.PI / 2 + point * Math.PI / 5;
+            const pointX = centerX + Math.cos(angle) * radius;
+            const pointY = centerY + Math.sin(angle) * radius;
+            if (point === 0) context.moveTo(pointX, pointY);
+            else context.lineTo(pointX, pointY);
+          }
+          context.closePath();
+          context.strokeStyle = '#882236';
+          context.lineWidth = Math.max(2, 2 * Math.min(scaleX, scaleY));
+          context.stroke();
+        } else if (layer.type === 'qr') {
+          context.fillStyle = '#ffffff';
+          context.fillRect(0, 0, layerWidth, layerHeight);
+          context.fillStyle = '#000000';
+          const module = Math.max(1, Math.min(layerWidth, layerHeight) / 7);
+          [[0, 0], [4, 0], [0, 4], [2, 2], [5, 5]].forEach(([column, row]) => {
+            context.fillRect(column * module, row * module, module * 2, module * 2);
+          });
+        }
+        context.restore();
+      }
+      return canvas;
+    }
+
+    function blobFromCanvas(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('The final photo could not be encoded.')), 'image/jpeg', 0.94);
+      });
+    }
+
+    function showSavedPhotoResult(result) {
+      savedFinalPhoto = result;
+      document.getElementById('qr-code-image').src = result.qrCodeDataUrl;
+      document.getElementById('qr-download-link').href = result.downloadUrl;
+      document.getElementById('final-photo-status').textContent = `Saved as ${result.filename}`;
+    }
+
+    async function saveFinalPhoto(template, photosByCamera) {
+      const status = document.getElementById('final-photo-status');
+      status.textContent = 'Saving final photo to this computer...';
+      try {
+        const previousResult = JSON.parse(sessionStorage.getItem(FINAL_PHOTO_RESULT_KEY) || 'null');
+        if (previousResult?.filename && previousResult?.qrCodeDataUrl && previousResult?.downloadUrl) {
+          showSavedPhotoResult(previousResult);
+          return;
+        }
+
+        const canvas = await renderFinalPhotoCanvas(template, photosByCamera);
+        const imageBlob = await blobFromCanvas(canvas);
+        const response = await fetch('/api/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': imageBlob.type },
+          body: imageBlob
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'The server could not save the final photo.');
+
+        sessionStorage.setItem(FINAL_PHOTO_RESULT_KEY, JSON.stringify(result));
+        showSavedPhotoResult(result);
+      } catch(error) {
+        status.textContent = `Photo not saved: ${error.message}. Start the LumaBooth server to enable saving.`;
+      }
+    }
+
     function shareAction(method) {
       if (method === 'Email') {
         const email = prompt("Enter your email address to receive your photo:");
@@ -319,7 +543,11 @@
         const phone = prompt("Enter your phone number:");
         if (phone) alert(`Photo sent to ${phone}!`);
       } else if (method === 'QR Code') {
-        alert("Scan the QR code to download your photo.");
+        if (!savedFinalPhoto) {
+          alert('The final photo is not saved yet.');
+          return;
+        }
+        document.getElementById('qr-download-dialog').showModal();
       }
     }
   </script>

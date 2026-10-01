@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#121113">
+  <title>Your LumaBooth Photo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 20px;
+      display: grid;
+      place-items: center;
+      background: #121113;
+      color: #f5f3f5;
+      font-family: "Segoe UI", sans-serif;
+    }
+    main { width: min(100%, 520px); text-align: center; }
+    h1 { margin: 0 0 20px; font-size: 24px; }
+    img {
+      display: block;
+      max-width: 100%;
+      max-height: 68vh;
+      margin: 0 auto 20px;
+      object-fit: contain;
+      background: #fff;
+      box-shadow: 0 16px 48px #0008;
+    }
+    a {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
+      border-radius: 6px;
+      background: #d82b6b;
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    #download-error { color: #ffb4c8; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Your LumaBooth Photo</h1>
+    <img id="photo-preview" alt="Your finished photo" hidden>
+    <p id="download-error" role="status" hidden>This download link is invalid or the photo is no longer available.</p>
+    <a id="download-link" hidden>Download photo</a>
+  </main>
+  <script>
+    const filename = new URLSearchParams(window.location.search).get('file') || '';
+    const validFilename = /^photo-\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png)$/.test(filename);
+    if (validFilename) {
+      const encodedFilename = encodeURIComponent(filename);
+      const preview = document.getElementById('photo-preview');
+      const downloadLink = document.getElementById('download-link');
+      preview.src = `/photos/${encodedFilename}`;
+      preview.onload = () => {
+        preview.hidden = false;
+        downloadLink.href = `/api/photos/${encodedFilename}`;
+        downloadLink.download = filename;
+        downloadLink.hidden = false;
+      };
+      preview.onerror = () => {
+        document.getElementById('download-error').hidden = false;
+      };
+    } else {
+      document.getElementById('download-error').hidden = false;
+    }
+  </script>
+</body>
+</html>
