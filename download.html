@@ -51,16 +51,19 @@
     <a id="download-link" hidden>Download photo</a>
   </main>
   <script>
+    const eventFolder = new URLSearchParams(window.location.search).get('event') || '';
     const filename = new URLSearchParams(window.location.search).get('file') || '';
-    const validFilename = /^photo-\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png)$/.test(filename);
-    if (validFilename) {
+    const validEventFolder = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(eventFolder);
+    const validFilename = /^photo-[a-z0-9][a-z0-9-]{0,47}-\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png)$/.test(filename);
+    if (validEventFolder && validFilename) {
+      const encodedEventFolder = encodeURIComponent(eventFolder);
       const encodedFilename = encodeURIComponent(filename);
       const preview = document.getElementById('photo-preview');
       const downloadLink = document.getElementById('download-link');
-      preview.src = `/photos/${encodedFilename}`;
+      preview.src = `/photos/${encodedEventFolder}/${encodedFilename}`;
       preview.onload = () => {
         preview.hidden = false;
-        downloadLink.href = `/api/photos/${encodedFilename}`;
+        downloadLink.href = `/api/photos/${encodedEventFolder}/${encodedFilename}`;
         downloadLink.download = filename;
         downloadLink.hidden = false;
       };

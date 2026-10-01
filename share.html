@@ -174,6 +174,7 @@
     const CAPTURED_PHOTO_ID = 'last-captured-photo';
     const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
     const FINAL_PHOTO_RESULT_KEY = 'lumabooth_final_photo_result_v1';
+    const ACTIVE_EVENT_KEY = 'lumabooth_active_event_v1';
     let savedFinalPhoto = null;
 
     function loadDatabaseRecord(storeName, key) {
@@ -505,7 +506,7 @@
       savedFinalPhoto = result;
       document.getElementById('qr-code-image').src = result.qrCodeDataUrl;
       document.getElementById('qr-download-link').href = result.downloadUrl;
-      document.getElementById('final-photo-status').textContent = `Saved as ${result.filename}`;
+      document.getElementById('final-photo-status').textContent = `Saved to ${result.eventName}: ${result.filename}`;
     }
 
     async function saveFinalPhoto(template, photosByCamera) {
@@ -520,7 +521,10 @@
 
         const canvas = await renderFinalPhotoCanvas(template, photosByCamera);
         const imageBlob = await blobFromCanvas(canvas);
-        const response = await fetch('/api/photos', {
+        const activeEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null');
+        if (!activeEvent?.id || !activeEvent?.name) throw new Error('Launch a named event before saving photos.');
+        const uploadQuery = new URLSearchParams({ eventId: activeEvent.id, eventName: activeEvent.name });
+        const response = await fetch(`/api/photos?${uploadQuery}`, {
           method: 'POST',
           headers: { 'Content-Type': imageBlob.type },
           body: imageBlob
