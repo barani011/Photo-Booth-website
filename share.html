@@ -57,55 +57,79 @@
     #print-copies { display: none; }
 
     /* Print media query: prints only the final composite strip cleanly */
-    @media print {
-      @page { margin: 0.25in; }
-      html, body {
-        width: auto !important;
-        height: auto !important;
-        min-height: 0 !important;
-        overflow: visible !important;
-        display: block !important;
-        background: #ffffff !important;
-      }
-      body * {
-        visibility: hidden !important;
-      }
-      #print-copies, #print-copies * {
-        visibility: visible !important;
-      }
-      #print-copies {
-        display: block !important;
-        position: static !important;
-        width: 100%;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      .print-copy-page {
-        display: flex !important;
-        width: 100%;
-        height: 10in;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        break-after: page;
-        page-break-after: always;
-      }
-      .print-copy-page:last-child {
-        break-after: auto;
-        page-break-after: auto;
-      }
-      .print-copy-page > .print-copy-artwork {
-        position: relative !important;
-        flex: 0 0 auto;
-        max-width: 100%;
-        max-height: 100%;
-        overflow: hidden !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        transition: none !important;
-      }
-    }
+    
+/* Print using the paper size saved in Photo Layout */
+#print-copies {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-copies,
+  #print-copies * {
+    visibility: visible !important;
+  }
+
+  #print-copies {
+    display: block !important;
+    width: var(--print-width) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-copy-page {
+    display: flex !important;
+    width: var(--print-width) !important;
+    height: var(--print-height) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-copy-page:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .print-copy-artwork {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: fill !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    flex: none !important;
+  }
+}
   </style>
   <link rel="manifest" href="/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
@@ -434,31 +458,221 @@
       }
     }
 
-    function getFinalImageDimensions(template) {
-      const resolution = Number(template.resolution) || 300;
-      const paperDimensions = {
-        '2x6': [2, 6],
-        '4x6': [4, 6],
-        '5x7': [5, 7],
-        '6x8': [6, 8],
-        '6x6': [6, 6],
-        '8x10': [8, 10],
-        A4: [210 / 25.4, 297 / 25.4],
-        A5: [148 / 25.4, 210 / 25.4],
-        A6: [105 / 25.4, 148 / 25.4],
-        A7: [74 / 25.4, 105 / 25.4]
-      };
-      let [width, height] = template.paperSize === 'Custom'
-        ? [Number(template.customPaperWidth) || 1200, Number(template.customPaperHeight) || 1800]
-        : (paperDimensions[template.paperSize] || [4, 6]).map(inches => inches * resolution);
-      const orientation = template.orientation
-        || ((template.artboardWidth || 380) > (template.artboardHeight || 570) ? 'Horizontal' : 'Vertical');
-      if ((orientation === 'Horizontal' && height > width)
-        || (orientation === 'Vertical' && width > height)) {
-        [width, height] = [height, width];
-      }
-      return { width: Math.round(width), height: Math.round(height) };
+    
+function getSavedPaperSizeMm(template) {
+  const paperSizes = {
+    '2x6': [2, 6],
+    '4x6': [4, 6],
+    '5x7': [5, 7],
+    '6x8': [6, 8],
+    '6x6': [6, 6],
+    '8x10': [8, 10],
+    A4: [210 / 25.4, 297 / 25.4],
+    A5: [148 / 25.4, 210 / 25.4],
+    A6: [105 / 25.4, 148 / 25.4],
+    A7: [74 / 25.4, 105 / 25.4]
+  };
+
+  const resolution = Number(template.resolution) || 300;
+
+  // Use the custom dimensions saved by the design editor.
+  let [width, height] =
+    template.paperSize === 'Custom'
+      ? [
+          (Number(template.customPaperWidth) || 1200) / resolution,
+          (Number(template.customPaperHeight) || 1800) / resolution
+        ]
+      : (paperSizes[template.paperSize] || paperSizes['4x6']);
+
+  const orientation =
+    template.orientation ||
+    ((Number(template.artboardWidth) || 380) >
+    (Number(template.artboardHeight) || 570)
+      ? 'Horizontal'
+      : 'Vertical');
+
+  if (
+    (orientation === 'Horizontal' && height > width) ||
+    (orientation === 'Vertical' && width > height)
+  ) {
+    [width, height] = [height, width];
+  }
+
+  // Convert inches to millimetres.
+  return {
+    width: width * 25.4,
+    height: height * 25.4
+  };
+}
+
+async function printPhotoCopies(quantity) {
+  const printCopies = document.getElementById('print-copies');
+
+  try {
+    printCopies.replaceChildren();
+
+    // Read the active template saved by Photo Layout.
+    let template = null;
+
+    try {
+      template = JSON.parse(
+        localStorage.getItem('lumabooth_active_template_v2') || 'null'
+      );
+    } catch (error) {
+      console.warn('Could not read active template:', error);
     }
+
+    // Fallback to the selected template in IndexedDB.
+    if (!template) {
+      const activeId = localStorage.getItem(
+        'lumabooth_active_template_id_v1'
+      );
+
+      if (activeId) {
+        template = await loadDatabaseRecord('templates', activeId);
+      }
+    }
+
+    if (!template) {
+      throw new Error('No saved photo layout was found.');
+    }
+
+    // Get the saved paper size and orientation.
+    const paper = getSavedPaperSizeMm(template);
+
+    // Set the actual physical page size in Chrome print preview.
+    let printStyle = document.getElementById(
+      'dynamic-print-page-style'
+    );
+
+    if (!printStyle) {
+      printStyle = document.createElement('style');
+      printStyle.id = 'dynamic-print-page-style';
+      document.head.appendChild(printStyle);
+    }
+
+    printStyle.textContent = `
+      @page {
+        size: ${paper.width}mm ${paper.height}mm;
+        margin: 0;
+      }
+    `;
+
+    printCopies.style.setProperty(
+      '--print-width',
+      `${paper.width}mm`
+    );
+
+    printCopies.style.setProperty(
+      '--print-height',
+      `${paper.height}mm`
+    );
+
+    // Load all captured photos from IndexedDB.
+    const photosByCamera = new Map();
+
+    const photoIds = JSON.parse(
+      sessionStorage.getItem(
+        'lumabooth_capture_photo_ids_v1'
+      ) || '[]'
+    );
+
+    for (const photoId of photoIds) {
+      const record = await loadDatabaseRecord(
+        'photo_assets',
+        photoId
+      );
+
+      if (record?.data) {
+        photosByCamera.set(
+          String(record.cameraNumber || photosByCamera.size + 1),
+          record.data
+        );
+      }
+    }
+
+    // Fallback for a single captured photo.
+    if (photosByCamera.size === 0) {
+      const record = await loadDatabaseRecord(
+        'photo_assets',
+        'last-captured-photo'
+      );
+
+      const latest = record?.galleryRecordId
+        ? await loadDatabaseRecord(
+            'photo_assets',
+            record.galleryRecordId
+          )
+        : record;
+
+      if (latest?.data) {
+        photosByCamera.set(
+          String(latest.cameraNumber || 1),
+          latest.data
+        );
+      } else {
+        const fallback = sessionStorage.getItem(
+          'lastCapturedPhoto'
+        );
+
+        if (fallback) {
+          photosByCamera.set('1', fallback);
+        }
+      }
+    }
+
+    // Render the original design at its saved output resolution.
+    const canvas = await renderFinalPhotoCanvas(
+      template,
+      photosByCamera
+    );
+
+    const imageUrl = canvas.toDataURL('image/png');
+
+    // One physical sheet per requested copy.
+    for (let i = 0; i < quantity; i++) {
+      const page = document.createElement('section');
+      page.className = 'print-copy-page';
+
+      const artwork = document.createElement('img');
+      artwork.className = 'print-copy-artwork';
+      artwork.src = imageUrl;
+      artwork.alt = 'Photo layout print';
+
+      page.appendChild(artwork);
+      printCopies.appendChild(page);
+    }
+
+    // Wait for all print images to load.
+    await Promise.all(
+      Array.from(printCopies.querySelectorAll('img')).map(img => {
+        if (img.complete && img.naturalWidth > 0) {
+          return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () =>
+            reject(new Error('Could not load the print image.'));
+        });
+      })
+    );
+
+    window.addEventListener(
+      'afterprint',
+      () => printCopies.replaceChildren(),
+      { once: true }
+    );
+
+    window.print();
+
+  } catch (error) {
+    printCopies.replaceChildren();
+
+    console.error('Printing failed:', error);
+    alert('Unable to prepare the print: ' + error.message);
+  }
+}
 
     function loadCanvasImage(source) {
       return new Promise((resolve, reject) => {
