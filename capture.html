@@ -281,6 +281,7 @@
     const PHOTO_ASSET_STORE = 'photo_assets';
     const LATEST_PHOTO_ID = 'last-captured-photo';
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
+    const ACTIVE_EVENT_KEY = 'lumabooth_active_event_v1';
     const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
     const CAPTURE_SESSION_ID_KEY = 'lumabooth_capture_session_id_v1';
 
@@ -425,21 +426,10 @@
       const cloudUploadTask = (async () => {
         try {
           const { uploadPhoto } = await import('./supabase.js');
-
-const photoBlob = await canvasToJpegBlob();
-
-// Get the event name entered on the index page
-const eventName = localStorage.getItem('eventName');
-
-if (!eventName) {
-    throw new Error('Event name not found. Please enter an event name first.');
-}
-
-await uploadPhoto(
-    photoBlob,
-    captureSessionId,
-    eventName
-);
+          const photoBlob = await canvasToJpegBlob();
+          const activeEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null');
+          if (!activeEvent?.name) throw new Error('Launch a named event before uploading photos.');
+          await uploadPhoto(photoBlob, captureSessionId, activeEvent.name);
         } catch(error) {
           console.warn('Photo could not be uploaded to Supabase:', error);
           try {

@@ -533,7 +533,7 @@
         try {
           const { uploadPhoto } = await import('./supabase.js');
           const sessionId = sessionStorage.getItem('lumabooth_capture_session_id_v1') || `session-${crypto.randomUUID()}`;
-          const cloudPhoto = await uploadPhoto(imageBlob, sessionId);
+          const cloudPhoto = await uploadPhoto(imageBlob, sessionId, activeEvent.name);
           cloudUrl = cloudPhoto.publicUrl;
         } catch(error) {
           console.warn('Final photo could not be uploaded to Supabase:', error);

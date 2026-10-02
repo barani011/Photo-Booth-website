@@ -62,7 +62,7 @@
         const url = new URL(value);
         return url.protocol === 'https:'
           && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
-          && /^\/storage\/v1\/object\/public\/booth-photos\/[a-zA-Z0-9/_-]+\.jpg$/.test(url.pathname);
+          && /^\/storage\/v1\/object\/public\/booth-photo\/[a-zA-Z0-9/_-]+\.jpg$/.test(url.pathname);
       } catch {
         return false;
       }

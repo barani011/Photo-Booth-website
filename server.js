@@ -89,7 +89,7 @@ function isValidCloudPhotoUrl(value) {
     const url = new URL(value);
     return url.protocol === 'https:'
       && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
-      && url.pathname.startsWith('/storage/v1/object/public/booth-photos/');
+      && url.pathname.startsWith('/storage/v1/object/public/booth-photo/');
   } catch {
     return false;
   }

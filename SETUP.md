@@ -16,15 +16,18 @@ In the Supabase SQL Editor, create the public bucket, metadata table, and anonym
 
 ```sql
 insert into storage.buckets (id, name, public)
-values ('booth-photos', 'booth-photos', true)
+values ('booth-photo', 'booth-photo', true)
 on conflict (id) do update set public = true;
 
 create table if not exists public.photos (
 	id uuid primary key default gen_random_uuid(),
 	session_id text not null,
+	event_name text,
 	image_path text not null unique,
 	created_at timestamptz not null default now()
 );
+
+alter table public.photos add column if not exists event_name text;
 
 alter table public.photos enable row level security;
 
@@ -40,10 +43,10 @@ create policy "Kiosk can return inserted photo records"
 	on public.photos for select to anon using (true);
 create policy "Kiosk can upload booth photo files"
 	on storage.objects for insert to anon
-	with check (bucket_id = 'booth-photos');
+	with check (bucket_id = 'booth-photo');
 ```
 
-The bucket is public so QR links can be opened without signing in. These anonymous policies are intended for a controlled photo-booth kiosk; use Supabase quotas and monitoring to limit unwanted uploads.
+The bucket name must be exactly `booth-photo`. Uploaded objects are stored under a lowercase event-name folder, such as `baranievent/<photo-id>.jpg`. The bucket is public so QR links can be opened without signing in. These anonymous policies are intended for a controlled photo-booth kiosk; use Supabase quotas and monitoring to limit unwanted uploads.
 
 ## Start the booth
 
