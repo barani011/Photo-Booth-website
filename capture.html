@@ -86,15 +86,15 @@
 
     /* Webcam Video Feed */
     #webcam-stream {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1); /* mirror view for selfie experience */
-      z-index: 1;
-    }
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: none;
+  z-index: 1;
+}
 
     /* Top Left Cancel 'X' Button */
     .btn-exit-capture {
@@ -421,11 +421,9 @@
       const ctx = canvas.getContext('2d');
 
       if (video.srcObject) {
-        // Mirror the snapshot so it matches what user sees on screen
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      } else {
+  // Capture the actual camera view without mirroring
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+} else {
         // Fallback placeholder if no webcam attached
         ctx.fillStyle = '#201f22';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
