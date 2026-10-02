@@ -8,7 +8,7 @@ canvas {
   max-width: 100%;
 }
 
-@media (max-width: 960px) {
+@media screen and (max-width: 960px) {
   body:has(.settings-panel-grid) .settings-panel-grid,
   body:has(.settings-columns-container) .settings-columns-container {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -21,7 +21,7 @@ canvas {
   }
 }
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   html:has(#events-list),
   html:has(.kiosk-screen),
   html:has(#kiosk-templates-carousel),
@@ -519,7 +519,7 @@ canvas {
   }
 }
 
-@media (max-width: 420px) {
+@media screen and (max-width: 420px) {
   body:has(.settings-panel-grid) .settings-panel-grid,
   body:has(.settings-columns-container) .settings-columns-container,
   body:has(#settings-dropdown-panel) #settings-dropdown-panel .grid-cols-6 {
