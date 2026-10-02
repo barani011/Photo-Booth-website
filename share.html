@@ -44,22 +44,66 @@
     #qr-download-dialog::backdrop { background: rgba(0, 0, 0, 0.78); }
     #qr-code-image { width: 240px; height: 240px; margin: 18px auto; background: #fff; }
 
+    #print-quantity-dialog {
+      width: min(92vw, 360px);
+      padding: 24px;
+      border: 1px solid #454249;
+      border-radius: 8px;
+      background: #222125;
+      color: #fff;
+    }
+    #print-quantity-dialog::backdrop { background: rgba(0, 0, 0, 0.78); }
+    #print-quantity { width: 100%; min-height: 44px; }
+    #print-copies { display: none; }
+
     /* Print media query: prints only the final composite strip cleanly */
     @media print {
+      @page { margin: 0.25in; }
+      html, body {
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        display: block !important;
+        background: #ffffff !important;
+      }
       body * {
         visibility: hidden !important;
       }
-      #print-area-wrapper, #print-area-wrapper * {
+      #print-copies, #print-copies * {
         visibility: visible !important;
       }
-      #print-area-wrapper {
-        position: fixed !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
+      #print-copies {
+        display: block !important;
+        position: static !important;
+        width: 100%;
         margin: 0 !important;
         padding: 0 !important;
+      }
+      .print-copy-page {
+        display: flex !important;
+        width: 100%;
+        height: 10in;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        break-after: page;
+        page-break-after: always;
+      }
+      .print-copy-page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+      .print-copy-page > .print-copy-artwork {
+        position: relative !important;
+        flex: 0 0 auto;
+        max-width: 100%;
+        max-height: 100%;
+        overflow: hidden !important;
+        border: 0 !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
+        transition: none !important;
       }
     }
   </style>
@@ -147,7 +191,7 @@
       </button>
 
       <!-- Print -->
-      <button onclick="window.print()" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
+      <button id="open-print-quantity" type="button" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
         <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Print</span>
         <div class="w-16 h-16 rounded-full bg-[#e53935] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
           <i class="fa-solid fa-print"></i>
@@ -168,6 +212,19 @@
     <a id="qr-download-link" class="inline-flex rounded bg-[#d82b6b] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Download photo</a>
   </dialog>
 
+  <dialog id="print-quantity-dialog" aria-labelledby="print-quantity-title">
+    <form id="print-quantity-form">
+      <h2 id="print-quantity-title" class="text-lg font-semibold">Print copies</h2>
+      <label for="print-quantity" class="mt-4 block text-sm text-[#b3b1b6]">Number of copies</label>
+      <input id="print-quantity" class="mt-2 rounded border border-[#555159] bg-[#171618] px-3 py-2 text-white" type="number" min="1" max="20" step="1" value="1" required>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="cancel-print-quantity" type="button" class="rounded border border-[#555159] px-4 py-2 text-sm text-white hover:bg-white/10">Cancel</button>
+        <button type="submit" class="rounded bg-[#d82b6b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be205b]">Print</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="print-copies" aria-hidden="true"></div>
+
   <script type="module">
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
     const ACTIVE_ID_KEY = 'lumabooth_active_template_id_v1';
@@ -180,6 +237,41 @@
     const FINAL_PHOTO_RESULT_KEY = 'lumabooth_final_photo_result_v1';
     const ACTIVE_EVENT_KEY = 'lumabooth_active_event_v1';
     let savedFinalPhoto = null;
+
+    document.getElementById('open-print-quantity').addEventListener('click', () => {
+      document.getElementById('print-quantity-dialog').showModal();
+      document.getElementById('print-quantity').focus();
+    });
+    document.getElementById('cancel-print-quantity').addEventListener('click', () => {
+      document.getElementById('print-quantity-dialog').close();
+    });
+    document.getElementById('print-quantity-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const quantityInput = document.getElementById('print-quantity');
+      const quantity = Math.min(20, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
+      quantityInput.value = String(quantity);
+      document.getElementById('print-quantity-dialog').close();
+      printPhotoCopies(quantity);
+    });
+
+    function printPhotoCopies(quantity) {
+      const source = document.getElementById('dynamic-rendered-strip');
+      const printCopies = document.getElementById('print-copies');
+      printCopies.replaceChildren();
+
+      for (let copy = 0; copy < quantity; copy++) {
+        const page = document.createElement('section');
+        page.className = 'print-copy-page';
+        const artwork = source.cloneNode(true);
+        artwork.removeAttribute('id');
+        artwork.classList.add('print-copy-artwork');
+        page.appendChild(artwork);
+        printCopies.appendChild(page);
+      }
+
+      window.addEventListener('afterprint', () => printCopies.replaceChildren(), { once: true });
+      window.print();
+    }
 
     function loadDatabaseRecord(storeName, key) {
       return new Promise((resolve, reject) => {
