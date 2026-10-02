@@ -273,6 +273,7 @@
         </div>
 
       </div>
+      <p id="empty-events-message" class="hidden text-sm text-zinc-400" role="status">No saved events. Create a new event to get started.</p>
     </aside>
 
     <!-- COLUMN 2: Capture Stage & Configuration Panel -->
@@ -543,6 +544,8 @@
     const modalLaunchBtn = document.getElementById('modal-launch-btn');
     const modalCustomizeBtn = document.getElementById('modal-customize-btn');
     const eventsList = document.getElementById('events-list');
+    const deleteBtn = document.getElementById('delete-btn');
+    const emptyEventsMessage = document.getElementById('empty-events-message');
     const searchInput = document.getElementById('event-search-input');
     const EVENTS_KEY = 'lumabooth_events_v1';
     const ACTIVE_EVENT_KEY = 'lumabooth_active_event_v1';
@@ -600,14 +603,17 @@
     }
 
     function loadEventSelection() {
-      const existingCards = Array.from(document.querySelectorAll('.event-card'));
-      const eventsById = new Map(existingCards.map(card => {
+      const initialEvents = Array.from(eventsList.querySelectorAll('.event-card')).map(card => {
         const event = { id: card.dataset.eventId, name: card.querySelector('.event-title')?.textContent.trim() };
-        return [event.id, event];
-      }).filter(([id, event]) => id && event.name));
-      let storedEvents = [];
-      try { storedEvents = JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]'); } catch(e) {}
-      if (!Array.isArray(storedEvents)) storedEvents = [];
+      });
+      let storedEvents = null;
+      try {
+        const storedEventsRaw = localStorage.getItem(EVENTS_KEY);
+        if (storedEventsRaw !== null) storedEvents = JSON.parse(storedEventsRaw);
+      } catch(e) {}
+      if (!Array.isArray(storedEvents)) storedEvents = initialEvents;
+
+      const eventsById = new Map();
       storedEvents.forEach(event => {
         if (!event?.id || typeof event.name !== 'string' || !event.name.trim()) return;
         eventsById.set(event.id, { id: event.id, name: event.name.trim() });
@@ -615,14 +621,13 @@
       savedEvents = Array.from(eventsById.values());
       persistEvents();
 
+      eventsList.replaceChildren();
       savedEvents.forEach(event => {
-        const existingCard = existingCards.find(card => card.dataset.eventId === event.id);
-        if (existingCard) {
-          existingCard.querySelector('.event-title').textContent = event.name;
-        } else {
-          eventsList.prepend(createEventCard(event));
-        }
+        const card = createEventCard(event);
+        eventsList.append(card);
+        attachCardClick(card);
       });
+      emptyEventsMessage.classList.toggle('hidden', savedEvents.length > 0);
 
       let preferredEvent = null;
       try { preferredEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null'); } catch(e) {}
@@ -641,6 +646,34 @@
       try { localStorage.setItem(ACTIVE_EVENT_KEY, JSON.stringify(selectedEvent)); } catch(e) {}
       window.location.href = 'kiosk.html';
     }
+
+    deleteBtn.addEventListener('click', () => {
+      if (!selectedEvent) {
+        alert('Select an event to remove from this list.');
+        return;
+      }
+
+      const eventToDelete = selectedEvent;
+      const confirmed = window.confirm(
+        `Remove "${eventToDelete.name}" from this event list? Its photos and database records will not be deleted.`
+      );
+      if (!confirmed) return;
+
+      savedEvents = savedEvents.filter(event => event.id !== eventToDelete.id);
+      persistEvents();
+      eventsList.querySelector(`[data-event-id="${CSS.escape(eventToDelete.id)}"]`)?.remove();
+
+      try {
+        const activeEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null');
+        if (activeEvent?.id === eventToDelete.id) localStorage.removeItem(ACTIVE_EVENT_KEY);
+      } catch(e) {}
+
+      selectedEvent = null;
+      emptyEventsMessage.classList.toggle('hidden', savedEvents.length > 0);
+      const nextCard = eventsList.querySelector('.event-card');
+      const nextEvent = nextCard && savedEvents.find(event => event.id === nextCard.dataset.eventId);
+      if (nextCard && nextEvent) setSelectedEvent(nextEvent, nextCard);
+    });
 
     // Open Modal
     function showModal() {
