@@ -124,12 +124,22 @@ export async function uploadPhoto(
   // This uses your existing photos table columns.
   // The event name is represented by the folder in image_path.
 
-  const { error: databaseError } = await supabase
-    .from('photos')
-    .insert({
-      session_id: String(sessionId),
-      image_path: uploadData.path
-    });
+  // Save photo details in the Supabase database.
+const { error: databaseError } = await supabase
+  .from('photos')
+  .insert({
+    session_id: String(sessionId),
+    event_name: String(eventName).trim(),
+    image_path: uploadData.path
+  });
+
+if (databaseError) {
+  console.error('Database insert failed:', databaseError);
+
+  throw new Error(
+    `Database save failed: ${databaseError.message}`
+  );
+}
 
   if (databaseError) {
     console.error('Database insert error:', databaseError);
