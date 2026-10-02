@@ -1,0 +1,538 @@
+* {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 960px) {
+  body:has(.settings-panel-grid) .settings-panel-grid,
+  body:has(.settings-columns-container) .settings-columns-container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body:has(.settings-options-panel) .settings-options-panel,
+  body:has(#settings-dropdown-panel) #settings-dropdown-panel {
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  html:has(#events-list),
+  html:has(.kiosk-screen),
+  html:has(#kiosk-templates-carousel),
+  html:has(#photo-grid),
+  html:has(#photo-preview),
+  html:has(#dynamic-rendered-strip),
+  html:has(.settings-viewport),
+  html:has(.settings-grid),
+  html:has(#photo-layout-workspace) {
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(#events-list) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(#events-list) > section {
+    align-items: flex-start;
+    padding: 12px !important;
+  }
+
+  body:has(#events-list) > section > div,
+  body:has(#events-list) > section > div > div,
+  body:has(#events-list) > section > div:last-child {
+    flex-wrap: wrap;
+  }
+
+  body:has(#events-list) > main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 18px;
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  body:has(#events-list) > main > * {
+    min-width: 0;
+    max-height: none;
+    overflow: visible !important;
+  }
+
+  body:has(.kiosk-screen) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .kiosk-screen {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 76px 14px 24px;
+    overflow: hidden;
+  }
+
+  #camera-feed,
+  .watermark-container {
+    height: 100%;
+  }
+
+  .modes-container {
+    width: 100%;
+    max-width: 440px;
+    flex-wrap: wrap;
+    gap: 20px 12px;
+    padding: 12px 0;
+  }
+
+  .mode-card {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 0;
+  }
+
+  .mode-icon-circle {
+    width: clamp(64px, 18vw, 88px);
+    height: clamp(64px, 18vw, 88px);
+  }
+
+  .mode-icon-circle svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .settings-panel {
+    position: fixed;
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .panel-subheader {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .panel-quick-actions {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .settings-columns-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 16px;
+    gap: 20px 14px;
+  }
+
+  .btn-toggle-panel,
+  .btn-unlock {
+    top: 12px;
+    right: 12px;
+  }
+
+  body:has(#kiosk-templates-carousel) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    justify-content: flex-start !important;
+    gap: 16px;
+    padding: 54px 14px 24px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(#kiosk-templates-carousel) > header {
+    padding: 0 12px !important;
+  }
+
+  body:has(#kiosk-templates-carousel) > header > div:last-child {
+    gap: 8px;
+  }
+
+  body:has(#kiosk-templates-carousel) > button[title="Return to Layout Editor"] {
+    top: 44px;
+    left: 8px;
+  }
+
+  body:has(#kiosk-templates-carousel) h2 {
+    margin: 8px 0 0 !important;
+    font-size: 24px !important;
+  }
+
+  body:has(#kiosk-templates-carousel) .relative.w-full.max-w-\[1300px\] {
+    width: 100%;
+    margin: 0;
+  }
+
+  #kiosk-templates-carousel {
+    gap: 14px;
+    padding: 12px;
+  }
+
+  body:has(#kiosk-templates-carousel) > div:last-of-type {
+    margin: 0;
+  }
+
+  body:has(#webcam-stream) {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .capture-viewport {
+    width: 100%;
+    height: calc(100vh - 38px);
+    height: calc(100dvh - 38px);
+  }
+
+  .btn-exit-capture {
+    top: 12px;
+    left: 12px;
+  }
+
+  .countdown-wrapper {
+    width: min(220px, 64vw);
+    height: min(220px, 64vw);
+  }
+
+  .progress-ring {
+    width: min(220px, 64vw);
+    height: min(220px, 64vw);
+  }
+
+  .countdown-number {
+    font-size: clamp(64px, 22vw, 96px);
+  }
+
+  body:has(#photo-grid) main {
+    padding: 20px 14px 32px;
+  }
+
+  body:has(#photo-grid) .heading-row {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+
+  body:has(#photo-grid) .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:has(#photo-preview) {
+    padding: 20px 14px;
+  }
+
+  body:has(#photo-preview) main {
+    width: 100%;
+  }
+
+  body:has(#dynamic-rendered-strip) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(#dynamic-rendered-strip) > main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto;
+    gap: 20px;
+    width: 100%;
+    height: auto !important;
+    padding: 14px !important;
+    overflow: visible !important;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > div.absolute {
+    position: static !important;
+    justify-content: flex-end;
+    grid-row: 1;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > aside:first-of-type {
+    justify-content: center;
+    padding-top: 0;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > section {
+    min-width: 0;
+    min-height: 40vh;
+    overflow: visible;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > aside:last-of-type {
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+  }
+
+  body:has(#dynamic-rendered-strip) #final-photo-status {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > aside:last-of-type > button {
+    flex: 1 1 calc(50% - 12px);
+    justify-content: space-between;
+    min-width: 140px;
+  }
+
+  body:has(#dynamic-rendered-strip) > main > aside:last-of-type > button > div {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    font-size: 18px;
+  }
+
+  body:has(.settings-viewport) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(.settings-viewport) .nav-header {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 14px;
+  }
+
+  body:has(.settings-viewport) .page-title {
+    order: 3;
+    width: 100%;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  body:has(.settings-viewport) .top-right-wrap {
+    gap: 8px;
+  }
+
+  .settings-viewport {
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: auto !important;
+    min-height: 0;
+    overflow: visible !important;
+  }
+
+  .controls-sidebar {
+    max-height: 42vh;
+    padding: 16px;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 1px solid #2d2c2e;
+  }
+
+  body:has(.settings-grid) {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  body:has(.settings-grid) .nav-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  body:has(.settings-grid) .page-title {
+    order: 3;
+    width: 100%;
+    text-align: center;
+    font-size: 17px;
+  }
+
+  body:has(.settings-grid) .top-right-wrap {
+    gap: 8px;
+  }
+
+  body:has(.settings-grid) .main-content {
+    width: 100%;
+    padding: 10px 14px 28px;
+    gap: 16px;
+  }
+
+  body:has(.settings-grid) .modes-selector-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 10px;
+    padding: 18px 12px;
+  }
+
+  body:has(.settings-grid) .mode-col {
+    max-width: none;
+  }
+
+  body:has(.settings-grid) .mode-circle-btn {
+    width: 58px;
+    height: 58px;
+  }
+
+  body:has(.settings-grid) .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  body:has(.settings-grid) .card {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  body:has(.settings-grid) .setting-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  body:has(.settings-grid) .slider-control-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:has(#photo-layout-workspace) {
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body:has(#photo-layout-workspace) > header {
+    height: auto;
+    min-height: 38px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 10px !important;
+  }
+
+  body:has(#photo-layout-workspace) > header > div:nth-child(2) {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  body:has(#photo-layout-workspace) > div.flex-1.flex.flex-col.overflow-hidden.relative {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  #photo-layout-workspace {
+    height: auto !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow: visible !important;
+  }
+
+  #photo-layout-workspace > aside {
+    min-width: 0;
+    max-height: 36vh;
+    min-height: 180px;
+    overflow: auto;
+  }
+
+  #photo-layout-workspace > section#canvas-workspace {
+    min-width: 0;
+    min-height: 56vh;
+    padding: 14px;
+  }
+
+  body:has(#photo-layout-workspace) nav {
+    height: auto !important;
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px !important;
+  }
+
+  body:has(#photo-layout-workspace) nav > div:nth-child(2) {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  body:has(#photo-layout-workspace) nav > div:last-child {
+    gap: 8px;
+  }
+
+  body:has(#photo-layout-workspace) section.h-\[60px\] {
+    height: auto !important;
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  body:has(#photo-layout-workspace) #settings-dropdown-panel {
+    position: fixed;
+    top: 0;
+    max-height: 100dvh;
+    padding: 14px;
+    overflow-y: auto;
+  }
+
+  body:has(#photo-layout-workspace) #settings-dropdown-panel .grid-cols-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  body:has(#photo-layout-workspace) #template-dropdown-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(540px, calc(100vw - 24px));
+    max-height: 85dvh;
+    overflow-y: auto;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (max-width: 420px) {
+  body:has(.settings-panel-grid) .settings-panel-grid,
+  body:has(.settings-columns-container) .settings-columns-container,
+  body:has(#settings-dropdown-panel) #settings-dropdown-panel .grid-cols-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-options-panel,
+  body:has(#settings-dropdown-panel) #settings-dropdown-panel {
+    padding: 14px;
+  }
+
+  body:has(#kiosk-templates-carousel) > div:last-of-type button {
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+  }
+}
