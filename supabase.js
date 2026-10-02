@@ -1,21 +1,19 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Load Supabase configuration from your Vercel API endpoint.
-const configResponse = await fetch('/api/config', {
-  cache: 'no-store'
-});
+// Replace these with your actual Supabase project details.
+const supabaseUrl = 'hhvxljqdjauyaukkfjrv';
+const supabaseAnonKey = 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk';
 
-if (!configResponse.ok) {
-  throw new Error('Could not load Supabase configuration.');
-}
-
-const { supabaseUrl, supabaseAnonKey } =
-  await configResponse.json();
-
-if (!supabaseUrl || !supabaseAnonKey) {
+// Validate configuration.
+if (
+  !supabaseUrl.startsWith('https://') ||
+  !supabaseAnonKey ||
+  supabaseUrl === 'hhvxljqdjauyaukkfjrv' ||
+  supabaseAnonKey === 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk'
+) {
   throw new Error(
-    'Missing Supabase URL or publishable key. Check your environment variables.'
+    'Please enter your actual Supabase URL and publishable key.'
   );
 }
 
@@ -25,22 +23,18 @@ export const supabase = createClient(
   supabaseAnonKey
 );
 
-// IMPORTANT: This must match your bucket name exactly.
+// Your exact Supabase Storage bucket name.
 const PHOTO_BUCKET = 'booth-photo';
 
 export async function uploadPhoto(photoBlob, sessionId) {
-  if (!photoBlob || !(photoBlob instanceof Blob)) {
-    throw new Error('A valid photo Blob is required.');
-  }
-
-  if (!sessionId) {
-    throw new Error('A valid photo session ID is required.');
+  if (!(photoBlob instanceof Blob) || !sessionId) {
+    throw new Error('A valid photo and session ID are required.');
   }
 
   const photoId = crypto.randomUUID();
   const imagePath = `${sessionId}/${photoId}.jpg`;
 
-  // 1. Upload the image file to Supabase Storage.
+  // 1. Upload the image to Supabase Storage.
   const { data: uploadData, error: uploadError } =
     await supabase.storage
       .from(PHOTO_BUCKET)
@@ -54,7 +48,7 @@ export async function uploadPhoto(photoBlob, sessionId) {
     throw uploadError;
   }
 
-  // 2. Save the image path and session ID in the database.
+  // 2. Save the photo details in the database.
   const { error: databaseError } = await supabase
     .from('photos')
     .insert({
@@ -63,17 +57,20 @@ export async function uploadPhoto(photoBlob, sessionId) {
     });
 
   if (databaseError) {
-    console.error('Photo database insert failed:', databaseError.message);
+    console.error(
+      'Photo database insert failed:',
+      databaseError.message
+    );
     throw databaseError;
   }
 
-  // 3. Get the image URL.
-  // This works for a PUBLIC bucket.
+  // 3. Get the URL for the uploaded image.
+  // This requires booth-photo to be a PUBLIC bucket.
   const { data: publicData } = supabase.storage
     .from(PHOTO_BUCKET)
     .getPublicUrl(uploadData.path);
 
-  // 4. Return photo details to your existing website.
+  // 4. Return the saved photo information.
   return {
     id: photoId,
     session_id: sessionId,
