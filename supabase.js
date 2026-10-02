@@ -1,40 +1,41 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Replace these with your actual Supabase project details.
-const supabaseUrl = 'https://hhvxljqdjauyaukkfjrv.supabase.co';
-const supabaseAnonKey = 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk';
+// Supabase project configuration
+const supabaseUrl =
+  'https://hhvxljqdjauyaukkfjrv.supabase.co';
 
-// Validate configuration.
+const supabaseAnonKey =
+  'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk';
+
+// Validate configuration
 if (
   !supabaseUrl.startsWith('https://') ||
-  !supabaseAnonKey ||
-  supabaseUrl === 'https://hhvxljqdjauyaukkfjrv.supabase.co' ||
-  supabaseAnonKey === 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk'
+  !supabaseAnonKey
 ) {
-  throw new Error(
-    'Please enter your actual Supabase URL and publishable key.'
-  );
+  throw new Error('Invalid Supabase configuration.');
 }
 
-// Connect to Supabase.
+// Connect to Supabase
 export const supabase = createClient(
   supabaseUrl,
   supabaseAnonKey
 );
 
-// Your exact Supabase Storage bucket name.
+// Exact bucket name from your Supabase dashboard
 const PHOTO_BUCKET = 'booth-photo';
 
+// Upload a captured photo and save its database record
 export async function uploadPhoto(photoBlob, sessionId) {
   if (!(photoBlob instanceof Blob) || !sessionId) {
-    throw new Error('A valid photo and session ID are required.');
+    throw new Error(
+      'A valid photo and session ID are required.'
+    );
   }
 
   const photoId = crypto.randomUUID();
   const imagePath = `${sessionId}/${photoId}.jpg`;
 
-  // 1. Upload the image to Supabase Storage.
+  // Step 1: Upload image to Supabase Storage
   const { data: uploadData, error: uploadError } =
     await supabase.storage
       .from(PHOTO_BUCKET)
@@ -44,11 +45,14 @@ export async function uploadPhoto(photoBlob, sessionId) {
       });
 
   if (uploadError) {
-    console.error('Photo upload failed:', uploadError.message);
+    console.error(
+      'Supabase Storage upload failed:',
+      uploadError.message
+    );
     throw uploadError;
   }
 
-  // 2. Save the photo details in the database.
+  // Step 2: Save photo details in the database
   const { error: databaseError } = await supabase
     .from('photos')
     .insert({
@@ -61,16 +65,17 @@ export async function uploadPhoto(photoBlob, sessionId) {
       'Photo database insert failed:',
       databaseError.message
     );
+
+    // The uploaded image remains in Storage if this fails.
     throw databaseError;
   }
 
-  // 3. Get the URL for the uploaded image.
-  // This requires booth-photo to be a PUBLIC bucket.
+  // Step 3: Generate the URL for a PUBLIC bucket
   const { data: publicData } = supabase.storage
     .from(PHOTO_BUCKET)
     .getPublicUrl(uploadData.path);
 
-  // 4. Return the saved photo information.
+  // Step 4: Return details to the existing website
   return {
     id: photoId,
     session_id: sessionId,
