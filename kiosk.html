@@ -405,6 +405,38 @@
       transition: transform 0.3s ease;
     }
 
+    .btn-unlock {
+      display: none;
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 50%;
+      background: #d82b6b;
+      color: #ffffff;
+      cursor: pointer;
+      z-index: 150;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .btn-unlock:hover { background: #be205b; }
+    .btn-unlock svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .kiosk-screen.locked .btn-toggle-panel { display: none; }
+    .kiosk-screen.locked .btn-unlock { display: flex; }
+
     /* When panel opens: position arrow right at panel edge and flip upwards */
     .settings-panel.open ~ .btn-toggle-panel {
       top: 310px;
@@ -414,6 +446,9 @@
       transform: rotate(180deg);
     }
   </style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
 </head>
 <body>
 
@@ -555,6 +590,12 @@
         <path d="M6 9l6 6 6-6"></path>
       </svg>
     </button>
+    <button class="btn-unlock" id="unlock-settings-btn" type="button" onclick="toggleKioskLock()" title="Unlock settings" aria-label="Unlock settings" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 9.8-1.5"></path>
+      </svg>
+    </button>
 
     <!-- Diagonal Watermark -->
     <div class="watermark-container">
@@ -609,12 +650,16 @@
   </div>
 
   <script src="camera-device.js"></script>
+  <script src="kiosk-lock.js"></script>
   <script>
     const settingsPanel = document.getElementById('settings-panel');
     const toggleBtn = document.getElementById('toggle-settings-btn');
+    const unlockBtn = document.getElementById('unlock-settings-btn');
+    const kioskScreen = document.querySelector('.kiosk-screen');
 
     // Toggle dropdown open/close on button click
     toggleBtn.addEventListener('click', () => {
+      if (window.LumaBoothLock.isLocked()) return;
       settingsPanel.classList.toggle('open');
     });
 
@@ -626,10 +671,16 @@
     });
 
     // Mode Navigation
-    let kioskLocked = false;
+    let kioskLocked = window.LumaBoothLock.isLocked();
+
+    if (kioskLocked) {
+      settingsPanel.classList.remove('open');
+      document.querySelector('.btn-lock').setAttribute('aria-pressed', 'true');
+      document.querySelector('.btn-lock').lastChild.textContent = ' Unlock';
+      document.querySelector('.btn-lock').title = 'Unlock kiosk controls';
+    }
 
     function selectMode(mode) {
-      if (kioskLocked) return;
       if (mode === 'Print') {
         window.location.href = 'template.html';
       } else {
@@ -654,13 +705,38 @@
       }
     }
 
-    function toggleKioskLock() {
+    async function toggleKioskLock() {
       const button = document.querySelector('.btn-lock');
       kioskLocked = !kioskLocked;
+      window.LumaBoothLock.setLocked(kioskLocked);
+      kioskScreen.classList.toggle('locked', kioskLocked);
       button.setAttribute('aria-pressed', String(kioskLocked));
       button.lastChild.textContent = kioskLocked ? ' Unlock' : ' Lock';
       button.title = kioskLocked ? 'Unlock kiosk controls' : 'Lock kiosk controls';
+
+      if (kioskLocked) {
+        settingsPanel.classList.remove('open');
+        unlockBtn.hidden = false;
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        } catch(error) {
+          console.warn('Fullscreen could not be enabled:', error);
+        }
+        return;
+      }
+
+      unlockBtn.hidden = true;
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+      } catch(error) {
+        console.warn('Fullscreen could not be exited:', error);
+      }
+      settingsPanel.classList.add('open');
     }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && kioskLocked) toggleKioskLock();
+    });
 
     let cameraStream = null;
 

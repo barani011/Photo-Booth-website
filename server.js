@@ -18,6 +18,7 @@ const publicPages = new Set([
   'gallery.html',
   'index.html',
   'kiosk.html',
+  'manifest.json',
   'photo-layout.html',
   'share.html',
   'template.html'

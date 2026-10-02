@@ -36,6 +36,9 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
 </head>
 <body class="w-full h-full flex flex-col justify-between items-center py-6 px-10 relative bg-[#0b0b0d] overflow-hidden select-none">
 
@@ -230,5 +233,6 @@
 
     window.addEventListener('DOMContentLoaded', loadTemplates);
   </script>
+  <script src="kiosk-lock.js"></script>
 </body>
 </html>

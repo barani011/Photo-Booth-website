@@ -59,6 +59,8 @@ npm start
 
 Open `http://localhost:3000` and use the normal template, capture, and share flow. Do not open the HTML files directly with `file://`; the browser needs the server for automatic final-photo saving.
 
+The web app manifest starts at `/kiosk.html` and requests standalone display mode. Browser installation requires a secure origin such as HTTPS (or localhost for development); standalone mode hides the browser address bar but does not hide Android system bars.
+
 Events created in the launch page are saved in this browser. Select an event and choose **Launch Event**, or create an event with its modal **Launch Event** button. Each completed design is rendered as a full-resolution JPG using its paper size and DPI, then saved automatically in `saved-photos/<event-name-and-id>/`. Filenames begin with a sanitized event name and include a timestamp and UUID, so images from different events stay separate and existing photos are never overwritten.
 
 The share page shows the event and saved filename. Select **Scan QR** to display a QR code that opens the matching photo download page. With Supabase configured, it serves the cloud copy; otherwise it falls back to the local server copy.
