@@ -2,14 +2,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Replace these with your actual Supabase project details.
-const supabaseUrl = 'hhvxljqdjauyaukkfjrv';
+const supabaseUrl = 'https://hhvxljqdjauyaukkfjrv.supabase.co';
 const supabaseAnonKey = 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk';
 
 // Validate configuration.
 if (
   !supabaseUrl.startsWith('https://') ||
   !supabaseAnonKey ||
-  supabaseUrl === 'hhvxljqdjauyaukkfjrv' ||
+  supabaseUrl === 'https://hhvxljqdjauyaukkfjrv.supabase.co' ||
   supabaseAnonKey === 'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk'
 ) {
   throw new Error(
