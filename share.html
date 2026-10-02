@@ -278,25 +278,6 @@
       printPhotoCopies(quantity);
     });
 
-    function printPhotoCopies(quantity) {
-      const source = document.getElementById('dynamic-rendered-strip');
-      const printCopies = document.getElementById('print-copies');
-      printCopies.replaceChildren();
-
-      for (let copy = 0; copy < quantity; copy++) {
-        const page = document.createElement('section');
-        page.className = 'print-copy-page';
-        const artwork = source.cloneNode(true);
-        artwork.removeAttribute('id');
-        artwork.classList.add('print-copy-artwork');
-        page.appendChild(artwork);
-        printCopies.appendChild(page);
-      }
-
-      window.addEventListener('afterprint', () => printCopies.replaceChildren(), { once: true });
-      window.print();
-    }
-
     function loadDatabaseRecord(storeName, key) {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -502,6 +483,15 @@ function getSavedPaperSizeMm(template) {
   return {
     width: width * 25.4,
     height: height * 25.4
+  };
+}
+
+function getFinalImageDimensions(template) {
+  const paper = getSavedPaperSizeMm(template);
+  const resolution = Number(template.resolution) || 300;
+  return {
+    width: Math.round((paper.width / 25.4) * resolution),
+    height: Math.round((paper.height / 25.4) * resolution)
   };
 }
 
