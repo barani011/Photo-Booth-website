@@ -286,6 +286,7 @@
     const LATEST_PHOTO_ID = 'last-captured-photo';
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
     const ACTIVE_EVENT_KEY = 'lumabooth_active_event_v1';
+    const CAMERA_DEVICE_KEY = 'lumabooth_camera_device_v1';
     const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
     const CAPTURE_SESSION_ID_KEY = 'lumabooth_capture_session_id_v1';
 
@@ -319,10 +320,25 @@
     // 1. Initialize Camera
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: "user" },
-          audio: false
-        });
+        const selectedDeviceId = localStorage.getItem(CAMERA_DEVICE_KEY) || '';
+        const videoConstraints = {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          ...(selectedDeviceId
+            ? { deviceId: { exact: selectedDeviceId } }
+            : { facingMode: 'user' })
+        };
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+        } catch(error) {
+          if (!selectedDeviceId) throw error;
+          console.warn('Selected camera is unavailable; using the default camera:', error);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+            audio: false
+          });
+        }
         video.srcObject = stream;
         runCountdown();
       } catch (err) {
