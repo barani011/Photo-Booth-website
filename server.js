@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+require('dotenv').config();
 const express = require('express');
 const QRCode = require('qrcode');
 
@@ -83,6 +84,17 @@ function detectImageType(buffer) {
   return null;
 }
 
+function isValidCloudPhotoUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:'
+      && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
+      && url.pathname.startsWith('/storage/v1/object/public/booth-photos/');
+  } catch {
+    return false;
+  }
+}
+
 function resolvePhotoPath(eventFolder, filename) {
   if (!isSafeEventFolder(eventFolder) || !isSafePhotoFilename(filename)) return null;
   const eventPath = path.resolve(SAVE_DIR, eventFolder);
@@ -93,7 +105,11 @@ function resolvePhotoPath(eventFolder, filename) {
 }
 
 app.get('/api/config', (req, res) => {
-  res.json({ publicBaseUrl: getPublicBaseUrl() });
+  res.json({
+    publicBaseUrl: getPublicBaseUrl(),
+    supabaseUrl: process.env.VITE_SUPABASE_URL?.trim() || '',
+    supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY?.trim() || ''
+  });
 });
 
 app.post('/api/photos', express.raw({
@@ -120,13 +136,18 @@ app.post('/api/photos', express.raw({
     await fs.promises.mkdir(path.dirname(photoPath), { recursive: true });
     await fs.promises.writeFile(photoPath, req.body, { flag: 'wx' });
     const publicBaseUrl = getPublicBaseUrl();
-    const downloadUrl = `${publicBaseUrl}/download.html?event=${encodeURIComponent(eventFolder)}&file=${encodeURIComponent(filename)}`;
+    const cloudUrl = typeof req.query.cloudUrl === 'string' && isValidCloudPhotoUrl(req.query.cloudUrl)
+      ? req.query.cloudUrl
+      : null;
+    const downloadUrl = cloudUrl
+      ? `${cloudUrl}?download=lumabooth-photo.jpg`
+      : `${publicBaseUrl}/download.html?event=${encodeURIComponent(eventFolder)}&file=${encodeURIComponent(filename)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl, {
       errorCorrectionLevel: 'M',
       margin: 2,
       width: 320
     });
-    res.status(201).json({ filename, eventName, eventFolder, downloadUrl, qrCodeDataUrl });
+    res.status(201).json({ filename, eventName, eventFolder, downloadUrl, qrCodeDataUrl, cloudUrl });
   } catch(error) {
     if (error.code === 'EEXIST') {
       return res.status(409).json({ error: 'Could not allocate a unique photo filename. Please retry.' });
@@ -153,10 +174,10 @@ app.get('/:page', (req, res, next) => {
   res.sendFile(path.join(__dirname, req.params.page));
 });
 app.get('/:asset', (req, res, next) => {
-  if (!/^[a-z0-9_-]+\.css$/i.test(req.params.asset)) return next();
+  if (!/^[a-z0-9_-]+\.(?:css|js)$/i.test(req.params.asset)) return next();
   const assetPath = path.join(__dirname, req.params.asset);
   if (!fs.existsSync(assetPath)) return next();
-  res.type('text/css').sendFile(assetPath);
+  res.type(path.extname(assetPath)).sendFile(assetPath);
 });
 
 app.use((error, req, res, next) => {

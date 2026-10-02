@@ -232,10 +232,10 @@
         </div>
 
         <div class="flex items-center gap-5 text-xs">
-          <button class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Copy link"><i class="fa-solid fa-link text-sm"></i></button>
-          <button class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Share"><i class="fa-solid fa-share-nodes text-sm"></i></button>
-          <span class="text-[#a4a2a7] flex items-center gap-2"><i class="fa-solid fa-camera"></i> USB2.0 HD UVC Web... <i class="fa-solid fa-chevron-down text-[10px]"></i></span>
-          <button class="border border-[#4c4a52] text-white px-3 py-1 rounded-full text-xs hover:border-white transition bg-transparent cursor-pointer"><i class="fa-solid fa-lock mr-1"></i> Lock</button>
+          <button onclick="copyCurrentPageLink()" class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Copy link"><i class="fa-solid fa-link text-sm"></i></button>
+          <button onclick="shareCurrentPage()" class="text-[#a4a2a7] hover:text-white bg-transparent border-0 cursor-pointer" title="Share"><i class="fa-solid fa-share-nodes text-sm"></i></button>
+          <label class="text-[#a4a2a7] flex items-center gap-2"><i class="fa-solid fa-camera"></i><select data-camera-select aria-label="Select camera" class="max-w-[175px] bg-[#1b1a1c] border border-[#4c4a52] text-white px-2 py-1 rounded"></select></label>
+          <button onclick="toggleActiveLock()" class="border border-[#4c4a52] text-white px-3 py-1 rounded-full text-xs hover:border-white transition bg-transparent cursor-pointer"><i class="fa-solid fa-lock mr-1"></i> Lock</button>
 
           <button onclick="closeSettingsDropdown()" class="w-8 h-8 rounded-full bg-[#d82b6b] hover:bg-[#bf205b] text-white flex items-center justify-center shadow-md cursor-pointer border-0 transition-transform active:scale-95 ml-2" title="Close Settings">
             <svg class="w-4 h-4 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -248,48 +248,50 @@
         <div class="flex flex-col gap-2.5">
           <span class="text-[#d82b6b] font-semibold text-sm">Screen Editor</span>
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-1">SETUP</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">General</a>
+          <a href="index.html" class="text-[#d5d4d8] hover:text-white no-underline">General</a>
           <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Capture Settings</a>
           <a href="camera-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Camera Settings</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Virtual Attendant</a>
+          <a href="capture.html" class="text-[#d5d4d8] hover:text-white no-underline">Virtual Attendant</a>
         </div>
 
         <div class="flex flex-col gap-2.5">
           <span class="text-[#d82b6b] font-semibold text-sm">Photo Layout</span>
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-1">PROCESS</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Effects & Stickers</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">AI Portraits</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Background Removal</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Survey</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Disclaimer</a>
+          <a href="photo-layout.html" class="text-[#d5d4d8] hover:text-white no-underline">Photo Layout</a>
+          <a href="gallery.html" class="text-[#d5d4d8] hover:text-white no-underline">Photo Gallery</a>
+          <a href="photo-layout.html" class="text-[#d5d4d8] hover:text-white no-underline">Effects & Stickers</a>
+          <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">AI Portraits</a>
+          <a href="photo-layout.html" class="text-[#d5d4d8] hover:text-white no-underline">Background Removal</a>
+          <a href="share.html" class="text-[#d5d4d8] hover:text-white no-underline">Survey</a>
+          <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Disclaimer</a>
         </div>
 
         <div class="flex flex-col gap-2.5">
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">SHARING ADD-ONS</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Settings</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Print Setup</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Slideshow</a>
+          <a href="share.html" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Settings</a>
+          <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Print Setup</a>
+          <a href="gallery.html" class="text-[#d5d4d8] hover:text-white no-underline">Slideshow</a>
         </div>
 
         <div class="flex flex-col gap-2.5">
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">EVENT</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Status</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Export Event</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Event folder</a>
+          <a href="share.html" class="text-[#d5d4d8] hover:text-white no-underline">Sharing Status</a>
+          <a href="download.html" class="text-[#d5d4d8] hover:text-white no-underline">Export Event</a>
+          <a href="download.html" class="text-[#d5d4d8] hover:text-white no-underline">Event folder</a>
         </div>
 
         <div class="flex flex-col gap-2.5">
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">MORE</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Remote Control</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Show Lock Screen</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Language</a>
+          <a href="kiosk.html" class="text-[#d5d4d8] hover:text-white no-underline">Remote Control</a>
+          <a href="kiosk.html" class="text-[#d5d4d8] hover:text-white no-underline">Show Lock Screen</a>
+          <a href="camera-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Language</a>
         </div>
 
         <div class="flex flex-col gap-2.5">
           <span class="text-[10px] text-[#78767d] font-bold tracking-wider uppercase mt-6">ACCOUNT</span>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Subscribe</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">About LumaBooth</a>
-          <a href="#" class="text-[#d5d4d8] hover:text-white no-underline">Help <i class="fa-solid fa-chevron-down text-[9px] ml-1"></i></a>
+          <a href="share.html" class="text-[#d5d4d8] hover:text-white no-underline">Subscribe</a>
+          <a href="index.html" class="text-[#d5d4d8] hover:text-white no-underline">About LumaBooth</a>
+          <a href="capture-settings.html" class="text-[#d5d4d8] hover:text-white no-underline">Help <i class="fa-solid fa-chevron-down text-[9px] ml-1"></i></a>
         </div>
       </div>
     </div>
@@ -716,6 +718,7 @@
   </div>
 
   <!-- JAVASCRIPT LOGIC (INDEXEDDB POWERED + LOCAL FILE EXPORT/IMPORT) -->
+  <script src="camera-device.js"></script>
   <script>
     const DB_NAME = 'lumabooth_db';
     const DB_VERSION = 2;
@@ -2207,6 +2210,23 @@
         closeSettingsDropdown();
       } else {
         openSettingsDropdown();
+      }
+    }
+
+    async function copyCurrentPageLink() {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Page link copied.');
+      } catch (error) {
+        prompt('Copy this page link:', window.location.href);
+      }
+    }
+
+    async function shareCurrentPage() {
+      if (navigator.share) {
+        try { await navigator.share({ title: document.title, url: window.location.href }); } catch (error) {}
+      } else {
+        await copyCurrentPageLink();
       }
     }
 

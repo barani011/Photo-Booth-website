@@ -184,6 +184,16 @@
       font-size: 13px;
     }
 
+    .settings-camera-select {
+      max-width: 220px;
+      padding: 7px 28px 7px 10px;
+      border: 1px solid #4c4a52;
+      border-radius: 6px;
+      background: #1b1a1c;
+      color: #eae9eb;
+      font: inherit;
+    }
+
     .settings-panel-close {
       width: 40px;
       height: 40px;
@@ -239,6 +249,8 @@
       .settings-options-panel { padding: 18px 20px 24px; }
       .settings-panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 16px; }
       .settings-panel-actions > span { display: none; }
+      .settings-panel-actions a { display: none; }
+      .settings-camera-select { max-width: 160px; }
     }
 
     /* Main Container */
@@ -517,7 +529,7 @@
 
   <!-- Navigation Bar -->
   <div class="nav-header">
-    <button class="nav-link" onclick="window.history.back()">
+    <button class="nav-link" onclick="window.location.href='index.html'">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
       General
     </button>
@@ -538,31 +550,31 @@
       <div class="settings-panel-top">
         <div class="settings-panel-event"><span>wedding event</span><span class="settings-panel-cloud" aria-hidden="true">☁</span></div>
         <div class="settings-panel-actions">
-          <span>Camera settings</span>
-          <span>Capture settings</span>
+          <select class="settings-camera-select" data-camera-select aria-label="Select camera"></select>
+          <a href="camera-settings.html">Camera settings</a>
           <button class="settings-panel-close" type="button" onclick="closeSettingsOptions()" aria-label="Close settings options">⌃</button>
         </div>
       </div>
       <nav class="settings-panel-grid" aria-label="Settings navigation">
         <div class="settings-panel-column">
           <h2>Screen Editor</h2><span class="settings-panel-label">SETUP</span>
-          <a href="index.html">General</a><a href="capture-settings.html">Capture Settings</a><a href="camera-settings.html">Camera Settings</a><a href="#">Virtual Attendant</a>
+          <a href="index.html">General</a><a href="capture-settings.html">Capture Settings</a><a href="camera-settings.html">Camera Settings</a><a href="capture.html">Virtual Attendant</a>
         </div>
         <div class="settings-panel-column">
           <h2>Photo Layout</h2><span class="settings-panel-label">PROCESS</span>
-          <a href="photo-layout.html">Photo Layout</a><a href="gallery.html">Photo Gallery</a><a href="#">Effects &amp; Stickers</a><a href="#">AI Portraits</a><a href="#">Background Removal</a><a href="#">Survey</a><a href="#">Disclaimer</a>
+          <a href="photo-layout.html">Photo Layout</a><a href="gallery.html">Photo Gallery</a><a href="photo-layout.html">Effects &amp; Stickers</a><a href="capture-settings.html">AI Portraits</a><a href="photo-layout.html">Background Removal</a><a href="share.html">Survey</a><a href="capture-settings.html">Disclaimer</a>
         </div>
         <div class="settings-panel-column">
-          <span class="settings-panel-label">SHARING ADD-ONS</span><a href="#">Sharing Settings</a><a href="#">Print Setup</a><a href="#">Slideshow</a>
+          <span class="settings-panel-label">SHARING ADD-ONS</span><a href="share.html">Sharing Settings</a><a href="capture-settings.html">Print Setup</a><a href="gallery.html">Slideshow</a>
         </div>
         <div class="settings-panel-column">
-          <span class="settings-panel-label">EVENT</span><a href="#">Sharing Status</a><a href="#">Export Event</a><a href="#">Event folder</a>
+          <span class="settings-panel-label">EVENT</span><a href="share.html">Sharing Status</a><a href="download.html">Export Event</a><a href="download.html">Event folder</a>
         </div>
         <div class="settings-panel-column">
-          <span class="settings-panel-label">MORE</span><a href="#">Remote Control</a><a href="#">Show Lock Screen</a><a href="#">Language</a>
+          <span class="settings-panel-label">MORE</span><a href="kiosk.html">Remote Control</a><a href="kiosk.html">Show Lock Screen</a><a href="camera-settings.html">Language</a>
         </div>
         <div class="settings-panel-column">
-          <span class="settings-panel-label">ACCOUNT</span><a href="#">Subscribe</a><a href="#">About LumaBooth</a><a href="#">Help</a>
+          <span class="settings-panel-label">ACCOUNT</span><a href="share.html">Subscribe</a><a href="index.html">About LumaBooth</a><a href="capture-settings.html">Help</a>
         </div>
       </nav>
     </div>
@@ -774,6 +786,7 @@
     </div>
   </main>
 
+  <script src="camera-device.js"></script>
   <script>
     function toggleSettingsOptions() {
       const button = document.getElementById('settings-options-toggle');

@@ -51,11 +51,37 @@
     <a id="download-link" hidden>Download photo</a>
   </main>
   <script>
-    const eventFolder = new URLSearchParams(window.location.search).get('event') || '';
-    const filename = new URLSearchParams(window.location.search).get('file') || '';
+    const searchParams = new URLSearchParams(window.location.search);
+    const eventFolder = searchParams.get('event') || '';
+    const filename = searchParams.get('file') || '';
+    const cloudUrl = searchParams.get('url') || '';
     const validEventFolder = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(eventFolder);
     const validFilename = /^photo-[a-z0-9][a-z0-9-]{0,47}-\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png)$/.test(filename);
-    if (validEventFolder && validFilename) {
+    function isValidCloudPhotoUrl(value) {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:'
+          && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)
+          && /^\/storage\/v1\/object\/public\/booth-photos\/[a-zA-Z0-9/_-]+\.jpg$/.test(url.pathname);
+      } catch {
+        return false;
+      }
+    }
+
+    if (isValidCloudPhotoUrl(cloudUrl)) {
+      const preview = document.getElementById('photo-preview');
+      const downloadLink = document.getElementById('download-link');
+      preview.src = cloudUrl;
+      preview.onload = () => {
+        preview.hidden = false;
+        downloadLink.href = `${cloudUrl}?download=lumabooth-photo.jpg`;
+        downloadLink.download = 'lumabooth-photo.jpg';
+        downloadLink.hidden = false;
+      };
+      preview.onerror = () => {
+        document.getElementById('download-error').hidden = false;
+      };
+    } else if (validEventFolder && validFilename) {
       const encodedEventFolder = encodeURIComponent(eventFolder);
       const encodedFilename = encodeURIComponent(filename);
       const preview = document.getElementById('photo-preview');

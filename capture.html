@@ -201,6 +201,15 @@
       opacity: 1;
     }
 
+    .capture-status {
+      position: absolute;
+      bottom: 28px;
+      z-index: 10;
+      color: #ffffff;
+      font-size: 14px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    }
+
     /* Hidden Processing Canvas */
     #photo-canvas {
       display: none;
@@ -254,12 +263,13 @@
 
     <!-- White Flash Animation -->
     <div class="flash-overlay" id="flash-screen"></div>
+    <p class="capture-status" id="capture-status" role="status" aria-live="polite"></p>
 
     <!-- Hidden Canvas used for taking photo -->
     <canvas id="photo-canvas"></canvas>
   </main>
 
-  <script>
+  <script type="module">
     const video = document.getElementById('webcam-stream');
     const countdownVal = document.getElementById('countdown-val');
     const shotProgress = document.getElementById('shot-progress');
@@ -272,6 +282,7 @@
     const LATEST_PHOTO_ID = 'last-captured-photo';
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
     const CAPTURE_PHOTO_IDS_KEY = 'lumabooth_capture_photo_ids_v1';
+    const CAPTURE_SESSION_ID_KEY = 'lumabooth_capture_session_id_v1';
 
     const totalCircumference = 2 * Math.PI * 110; // ~691px
     progressCircle.style.strokeDasharray = `${totalCircumference} ${totalCircumference}`;
@@ -280,6 +291,7 @@
     const initialSeconds = 3;
     let shotNumbers = [1];
     let shotIndex = 0;
+    const cloudUploadTasks = [];
     const captureSessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     function loadShotNumbers() {
@@ -294,6 +306,9 @@
       } catch(e) {}
       try { sessionStorage.removeItem(CAPTURE_PHOTO_IDS_KEY); } catch(e) {}
       try { sessionStorage.removeItem('lumabooth_final_photo_result_v1'); } catch(e) {}
+      try { sessionStorage.removeItem('lumabooth_cloud_upload_failures_v1'); } catch(e) {}
+      try { sessionStorage.removeItem('lumabooth_cloud_upload_error_v1'); } catch(e) {}
+      try { sessionStorage.setItem(CAPTURE_SESSION_ID_KEY, captureSessionId); } catch(e) {}
     }
 
     // 1. Initialize Camera
@@ -369,6 +384,12 @@
       });
     }
 
+    function canvasToJpegBlob() {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Photo could not be encoded.')), 'image/jpeg', 0.92);
+      });
+    }
+
     // 3. Capture each numbered camera frame before opening the share page.
     async function triggerShutterFlash() {
       flashScreen.classList.add('trigger');
@@ -401,6 +422,20 @@
       } catch(error) {
         console.warn('Photo history could not be saved:', error);
       }
+      const cloudUploadTask = (async () => {
+        try {
+          const { uploadPhoto } = await import('./supabase.js');
+          await uploadPhoto(await canvasToJpegBlob(), captureSessionId);
+        } catch(error) {
+          console.warn('Photo could not be uploaded to Supabase:', error);
+          try {
+            sessionStorage.setItem('lumabooth_cloud_upload_error_v1', String(error?.message || 'Upload failed').slice(0, 160));
+            const failures = Number(sessionStorage.getItem('lumabooth_cloud_upload_failures_v1') || 0);
+            sessionStorage.setItem('lumabooth_cloud_upload_failures_v1', String(failures + 1));
+          } catch(e) {}
+        }
+      })();
+      cloudUploadTasks.push(cloudUploadTask);
       if (savedPhotoId) {
         try {
           const photoIds = JSON.parse(sessionStorage.getItem(CAPTURE_PHOTO_IDS_KEY) || '[]');
@@ -409,7 +444,7 @@
         } catch(e) {}
       }
 
-      setTimeout(() => {
+      setTimeout(async () => {
         flashScreen.classList.remove('trigger');
         shotIndex++;
         if (shotIndex < shotNumbers.length) {
@@ -418,6 +453,9 @@
           runCountdown();
           return;
         }
+
+        document.getElementById('capture-status').textContent = 'Finishing photo uploads...';
+        await Promise.all(cloudUploadTasks);
 
         if (video.srcObject) {
           video.srcObject.getTracks().forEach(track => track.stop());

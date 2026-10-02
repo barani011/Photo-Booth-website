@@ -160,11 +160,11 @@
       <button onclick="document.getElementById('qr-download-dialog').close()" class="rounded border border-[#555159] px-3 py-1.5 text-sm text-white hover:bg-white/10" aria-label="Close QR code">Close</button>
     </div>
     <img id="qr-code-image" alt="QR code linking to your photo download">
-    <p class="mb-4 text-sm text-[#b3b1b6]">Scan with your phone to open the download page.</p>
-    <a id="qr-download-link" class="inline-flex rounded bg-[#d82b6b] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Open download page</a>
+    <p class="mb-4 text-sm text-[#b3b1b6]">Scan with your phone to download the finished photo.</p>
+    <a id="qr-download-link" class="inline-flex rounded bg-[#d82b6b] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Download photo</a>
   </dialog>
 
-  <script>
+  <script type="module">
     const ACTIVE_KEY = 'lumabooth_active_template_v2';
     const ACTIVE_ID_KEY = 'lumabooth_active_template_id_v1';
     const STORAGE_KEY = 'lumabooth_saved_templates_v2';
@@ -506,7 +506,12 @@
       savedFinalPhoto = result;
       document.getElementById('qr-code-image').src = result.qrCodeDataUrl;
       document.getElementById('qr-download-link').href = result.downloadUrl;
-      document.getElementById('final-photo-status').textContent = `Saved to ${result.eventName}: ${result.filename}`;
+      const failedCaptures = Number(sessionStorage.getItem('lumabooth_cloud_upload_failures_v1') || 0);
+      const cloudError = result.cloudError || sessionStorage.getItem('lumabooth_cloud_upload_error_v1');
+      const cloudStatus = result.cloudUrl
+        ? failedCaptures ? ` and Supabase; ${failedCaptures} capture upload(s) failed` : ' and Supabase'
+        : cloudError ? ` locally (Supabase: ${cloudError})` : ' locally (Supabase upload unavailable)';
+      document.getElementById('final-photo-status').textContent = `Saved to ${result.eventName}: ${result.filename}${cloudStatus}`;
     }
 
     async function saveFinalPhoto(template, photosByCamera) {
@@ -523,7 +528,20 @@
         const imageBlob = await blobFromCanvas(canvas);
         const activeEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null');
         if (!activeEvent?.id || !activeEvent?.name) throw new Error('Launch a named event before saving photos.');
+        let cloudUrl = null;
+        let cloudError = null;
+        try {
+          const { uploadPhoto } = await import('./supabase.js');
+          const sessionId = sessionStorage.getItem('lumabooth_capture_session_id_v1') || `session-${crypto.randomUUID()}`;
+          const cloudPhoto = await uploadPhoto(imageBlob, sessionId);
+          cloudUrl = cloudPhoto.publicUrl;
+        } catch(error) {
+          console.warn('Final photo could not be uploaded to Supabase:', error);
+          cloudError = String(error?.message || 'Upload failed').slice(0, 160);
+          try { sessionStorage.setItem('lumabooth_cloud_upload_error_v1', cloudError); } catch(e) {}
+        }
         const uploadQuery = new URLSearchParams({ eventId: activeEvent.id, eventName: activeEvent.name });
+        if (cloudUrl) uploadQuery.set('cloudUrl', cloudUrl);
         const response = await fetch(`/api/photos?${uploadQuery}`, {
           method: 'POST',
           headers: { 'Content-Type': imageBlob.type },
@@ -532,10 +550,12 @@
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'The server could not save the final photo.');
 
+        result.cloudError = cloudError;
         sessionStorage.setItem(FINAL_PHOTO_RESULT_KEY, JSON.stringify(result));
         showSavedPhotoResult(result);
       } catch(error) {
-        status.textContent = `Photo not saved: ${error.message}. Start the LumaBooth server to enable saving.`;
+        const connectionHint = error instanceof TypeError ? ' Check the LumaBooth server connection.' : '';
+        status.textContent = `Photo not saved: ${error.message}${connectionHint}`;
       }
     }
 
@@ -554,6 +574,8 @@
         document.getElementById('qr-download-dialog').showModal();
       }
     }
+
+    window.shareAction = shareAction;
   </script>
 </body>
 </html>

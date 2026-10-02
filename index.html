@@ -152,7 +152,7 @@
   </header>
 
   <!-- Action Header Toolbar -->
-  <section class="h-16 px-6 bg-[#1b1a1c] border-b border-[#2c2b2f] flex items-center justify-between gap-4 shrink-0">
+  <section class="min-h-16 px-6 py-2 bg-[#1b1a1c] border-b border-[#2c2b2f] flex items-center justify-between gap-4 shrink-0 flex-wrap">
     <div class="flex items-center gap-4 lg:gap-7 flex-wrap">
       <span class="text-[17px] font-bold tracking-tight text-white">Your events</span>
 
@@ -178,9 +178,16 @@
     </div>
 
     <!-- Primary Launch Action -->
-    <button class="btn-launch-event" id="launch-selected-event" onclick="launchSelectedEvent()">
-      <i class="fa-solid fa-bolt"></i> Launch Event
-    </button> 
+    <div class="flex items-center justify-end gap-2 flex-wrap">
+      <select data-camera-select aria-label="Select camera" class="max-w-44 rounded-full border border-zinc-600/80 bg-[#252427] px-3 py-1.5 text-xs text-zinc-200 outline-none"></select>
+      <a href="capture-settings.html" class="rounded-full border border-zinc-600/80 bg-[#252427] px-3.5 py-1.5 text-xs font-medium text-zinc-200 no-underline hover:bg-[#2f2e32]">Capture Settings</a>
+      <a href="camera-settings.html" class="rounded-full border border-zinc-600/80 bg-[#252427] px-3.5 py-1.5 text-xs font-medium text-zinc-200 no-underline hover:bg-[#2f2e32]">Camera Settings</a>
+      <a href="photo-layout.html" class="rounded-full border border-zinc-600/80 bg-[#252427] px-3.5 py-1.5 text-xs font-medium text-zinc-200 no-underline hover:bg-[#2f2e32]">Photo Layout</a>
+      <a href="capture.html" class="rounded-full border border-zinc-600/80 bg-[#252427] px-3.5 py-1.5 text-xs font-medium text-zinc-200 no-underline hover:bg-[#2f2e32]">Live Capture</a>
+      <button class="btn-launch-event" id="launch-selected-event" onclick="launchSelectedEvent()">
+        <i class="fa-solid fa-bolt"></i> Launch Event
+      </button>
+    </div>
   </section>
 
   <!-- Main Grid Workspace -->
@@ -525,6 +532,7 @@
     </div>
   </div>
 
+  <script src="camera-device.js"></script>
   <script>
     // Elements
     const openModalBtn = document.getElementById('open-new-event-btn');
