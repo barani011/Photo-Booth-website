@@ -425,7 +425,21 @@
       const cloudUploadTask = (async () => {
         try {
           const { uploadPhoto } = await import('./supabase.js');
-          await uploadPhoto(await canvasToJpegBlob(), captureSessionId);
+
+const photoBlob = await canvasToJpegBlob();
+
+// Get the event name entered on the index page
+const eventName = localStorage.getItem('eventName');
+
+if (!eventName) {
+    throw new Error('Event name not found. Please enter an event name first.');
+}
+
+await uploadPhoto(
+    photoBlob,
+    captureSessionId,
+    eventName
+);
         } catch(error) {
           console.warn('Photo could not be uploaded to Supabase:', error);
           try {
