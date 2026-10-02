@@ -1,9 +1,9 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// ========================================
+// ============================================
 // 1. SUPABASE CONFIGURATION
-// ========================================
+// ============================================
 
 const supabaseUrl =
   'https://hhvxljqdjauyaukkfjrv.supabase.co';
@@ -13,9 +13,9 @@ const supabaseAnonKey =
 
 const PHOTO_BUCKET = 'booth-photo';
 
-// ========================================
+// ============================================
 // 2. CONNECT TO SUPABASE
-// ========================================
+// ============================================
 
 if (
   !supabaseUrl.startsWith('https://') ||
@@ -29,34 +29,78 @@ export const supabase = createClient(
   supabaseAnonKey
 );
 
-// ========================================
-// 3. UPLOAD PHOTO AND SAVE DATABASE RECORD
-// ========================================
+// ============================================
+// 3. CONVERT EVENT NAME TO A FOLDER NAME
+// ============================================
 
-export async function uploadPhoto(photoBlob, sessionId) {
+function getEventFolder(eventName) {
+  const folder = String(eventName || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (!folder) {
+    throw new Error('Please provide a valid event name.');
+  }
+
+  return folder;
+}
+
+// ============================================
+// 4. UPLOAD PHOTO TO ITS EVENT FOLDER
+// ============================================
+
+export async function uploadPhoto(
+  photoBlob,
+  sessionId,
+  eventName
+) {
   if (!(photoBlob instanceof Blob) || photoBlob.size === 0) {
     throw new Error('The captured photo is empty or invalid.');
   }
 
   if (!sessionId) {
-    throw new Error('A valid photo session ID is required.');
+    throw new Error('Session ID is required.');
   }
 
+  if (!eventName || !String(eventName).trim()) {
+    throw new Error('Event name is required.');
+  }
+
+  // Create a safe event folder name.
+  const eventFolder = getEventFolder(eventName);
+
+  // Generate a unique filename.
   const photoId = crypto.randomUUID();
 
-  // Preserve the actual image format.
+  // Identify the image format.
   const contentType = photoBlob.type || 'image/jpeg';
 
-  const extension = {
+  const extensionMap = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp'
-  }[contentType] || 'jpg';
+  };
 
+  const extension = extensionMap[contentType];
+
+  if (!extension) {
+    throw new Error(
+      `Unsupported image format: ${contentType}`
+    );
+  }
+
+  // IMPORTANT:
+  // Store the photo in the EVENT folder,
+  // not the individual session folder.
   const imagePath =
-    `${sessionId}/${photoId}.${extension}`;
+    `${eventFolder}/${photoId}.${extension}`;
 
-  // Upload the actual image to Supabase Storage.
+  // ============================================
+  // 5. UPLOAD IMAGE TO SUPABASE STORAGE
+  // ============================================
+
   const { data: uploadData, error: uploadError } =
     await supabase.storage
       .from(PHOTO_BUCKET)
@@ -66,13 +110,20 @@ export async function uploadPhoto(photoBlob, sessionId) {
       });
 
   if (uploadError) {
-    console.error('SUPABASE STORAGE ERROR:', uploadError);
+    console.error('Storage upload error:', uploadError);
+
     throw new Error(
-      `Photo upload failed: ${uploadError.message}`
+      `Image upload failed: ${uploadError.message}`
     );
   }
 
-  // Save photo details in the photos database table.
+  // ============================================
+  // 6. SAVE PHOTO DETAILS IN DATABASE
+  // ============================================
+
+  // This uses your existing photos table columns.
+  // The event name is represented by the folder in image_path.
+
   const { error: databaseError } = await supabase
     .from('photos')
     .insert({
@@ -81,33 +132,83 @@ export async function uploadPhoto(photoBlob, sessionId) {
     });
 
   if (databaseError) {
-    console.error('SUPABASE DATABASE ERROR:', databaseError);
+    console.error('Database insert error:', databaseError);
 
-    // Remove the uploaded image if saving its record fails.
-    const { error: cleanupError } = await supabase.storage
-      .from(PHOTO_BUCKET)
-      .remove([uploadData.path]);
-
-    if (cleanupError) {
-      console.error('Image cleanup failed:', cleanupError);
-    }
-
+    // The image has uploaded, but its database
+    // record could not be saved.
     throw new Error(
-      `Photo uploaded, but database save failed: ${databaseError.message}`
+      `Image uploaded, but database save failed: ${
+        databaseError.message
+      }`
     );
   }
 
-  // Generate the URL. This requires a PUBLIC bucket.
+  // ============================================
+  // 7. GENERATE THE IMAGE URL
+  // ============================================
+
+  // Requires booth-photo to be a PUBLIC bucket.
   const { data: publicData } = supabase.storage
     .from(PHOTO_BUCKET)
     .getPublicUrl(uploadData.path);
 
-  console.log('Photo saved successfully:', uploadData.path);
+  // ============================================
+  // 8. RETURN THE SAVED PHOTO DETAILS
+  // ============================================
 
-  return {
+  const result = {
     id: photoId,
     session_id: String(sessionId),
+    event_name: String(eventName).trim(),
     image_path: uploadData.path,
     publicUrl: publicData.publicUrl
   };
+
+  console.log('Photo saved successfully:', result);
+
+  return result;
+}
+
+// ============================================
+// 9. GET ALL PHOTOS FOR AN EVENT
+// ============================================
+
+export async function getEventPhotos(eventName) {
+  const eventFolder = getEventFolder(eventName);
+
+  const { data, error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .list(eventFolder, {
+      limit: 100,
+      sortBy: {
+        column: 'name',
+        order: 'desc'
+      }
+    });
+
+  if (error) {
+    console.error('Could not load event photos:', error);
+    throw new Error(
+      `Could not load event photos: ${error.message}`
+    );
+  }
+
+  // Ignore nested folders and return image files only.
+  return data
+    .filter(file =>
+      /\.(jpg|jpeg|png|webp)$/i.test(file.name)
+    )
+    .map(file => {
+      const imagePath = `${eventFolder}/${file.name}`;
+
+      const { data: publicData } = supabase.storage
+        .from(PHOTO_BUCKET)
+        .getPublicUrl(imagePath);
+
+      return {
+        name: file.name,
+        image_path: imagePath,
+        publicUrl: publicData.publicUrl
+      };
+    });
 }
