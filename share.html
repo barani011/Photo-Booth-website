@@ -350,7 +350,11 @@
         '5x7': [5, 7],
         '6x8': [6, 8],
         '6x6': [6, 6],
-        '8x10': [8, 10]
+        '8x10': [8, 10],
+        A4: [210 / 25.4, 297 / 25.4],
+        A5: [148 / 25.4, 210 / 25.4],
+        A6: [105 / 25.4, 148 / 25.4],
+        A7: [74 / 25.4, 105 / 25.4]
       };
       let [width, height] = template.paperSize === 'Custom'
         ? [Number(template.customPaperWidth) || 1200, Number(template.customPaperHeight) || 1800]

@@ -478,6 +478,10 @@
                 <option value="6x8">6 x 8</option>
                 <option value="6x6">6 x 6</option>
                 <option value="8x10">8 x 10</option>
+                <option value="A4">A4 (210 x 297 mm)</option>
+                <option value="A5">A5 (148 x 210 mm)</option>
+                <option value="A6">A6 (105 x 148 mm)</option>
+                <option value="A7">A7 (74 x 105 mm)</option>
                 <option value="Custom">Custom</option>
               </select>
               <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-[10px] text-[#888] pointer-events-none"></i>
@@ -1939,13 +1943,25 @@
 
     function handlePaperSizeChange(val) {
       saveState();
-      if (val === '2x6') {
-        artboard.style.width = '320px';
-        artboard.style.height = '600px';
-      } else {
-        artboard.style.width = '380px';
-        artboard.style.height = '570px';
+      const paperDimensions = {
+        '2x6': [2, 6],
+        '4x6': [4, 6],
+        '5x7': [5, 7],
+        '6x8': [6, 8],
+        '6x6': [6, 6],
+        '8x10': [8, 10],
+        A4: [210 / 25.4, 297 / 25.4],
+        A5: [148 / 25.4, 210 / 25.4],
+        A6: [105 / 25.4, 148 / 25.4],
+        A7: [74 / 25.4, 105 / 25.4]
+      };
+      let [paperWidth, paperHeight] = paperDimensions[val] || [4, 6];
+      if (document.getElementById('select-orientation').value === 'Horizontal' && paperHeight > paperWidth) {
+        [paperWidth, paperHeight] = [paperHeight, paperWidth];
       }
+      const displayScale = 570 / Math.max(paperWidth, paperHeight);
+      artboard.style.width = `${Math.round(paperWidth * displayScale)}px`;
+      artboard.style.height = `${Math.round(paperHeight * displayScale)}px`;
       updateSelectionOverlay();
       syncCurrentTemplateObject();
     }
@@ -2019,7 +2035,11 @@
         '5x7': [5, 7],
         '6x8': [6, 8],
         '6x6': [6, 6],
-        '8x10': [8, 10]
+        '8x10': [8, 10],
+        A4: [210 / 25.4, 297 / 25.4],
+        A5: [148 / 25.4, 210 / 25.4],
+        A6: [105 / 25.4, 148 / 25.4],
+        A7: [74 / 25.4, 105 / 25.4]
       };
       const resolution = parseFloat(document.getElementById('select-resolution').value) || 300;
       let [paperWidth, paperHeight] = paperSize === 'Custom'
