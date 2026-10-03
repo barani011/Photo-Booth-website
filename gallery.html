@@ -200,6 +200,59 @@
       .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
       .photo-actions { flex-wrap: wrap; }
     }
+    /* Selection controls */
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.photo-select {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--pink);
+}
+
+.photo-preview-wrapper {
+  position: relative;
+}
+
+.photo-card.selected {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 1px var(--pink);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toolbar-button:disabled:hover {
+  background: #27252a;
+}
+
+@media (max-width: 900px) {
+  .toolbar-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .toolbar-button {
+    width: 100%;
+  }
+}
   </style>
   <link rel="manifest" href="/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
@@ -214,15 +267,48 @@
 
   <main>
     <div class="toolbar">
-      <div class="heading-row">
-        <h1>Photo Gallery</h1>
-        <span id="photo-count" role="status" aria-live="polite">Loading photos...</span>
-      </div>
-      <div class="toolbar-actions">
-        <button class="toolbar-button" type="button" onclick="goBackToBooth()">Back</button>
-        <a class="toolbar-button primary" href="share.html">Done</a>
-      </div>
-    </div>
+  <div class="heading-row">
+    <h1>Photo Gallery</h1>
+    <span id="photo-count" role="status" aria-live="polite">Loading photos...</span>
+  </div>
+
+  <div class="toolbar-actions">
+    <button
+      id="select-all-button"
+      class="toolbar-button"
+      type="button"
+      onclick="toggleSelectAll()">
+      Select All
+    </button>
+
+    <button
+      id="download-selected-button"
+      class="toolbar-button"
+      type="button"
+      onclick="downloadSelectedPhotos()"
+      disabled>
+      Download Selected
+    </button>
+
+    <button
+      id="delete-selected-button"
+      class="toolbar-button"
+      type="button"
+      onclick="deleteSelectedPhotos()"
+      disabled>
+      Delete Selected
+    </button>
+
+    <button
+      class="toolbar-button"
+      type="button"
+      onclick="goBackToBooth()">
+      Back
+    </button>
+
+    <a class="toolbar-button primary" href="share.html">Done</a>
+  </div>
+</div>
 
     <div id="photo-grid" class="photo-grid" aria-live="polite"></div>
     <div id="empty-state" class="empty-state" hidden>
@@ -244,6 +330,183 @@
 
     let photoDatabase = null;
     let photos = [];
+
+    const selectedPhotoIds = new Set();
+
+function updateSelectionControls() {
+  const selectedCount = selectedPhotoIds.size;
+  const totalCount = photos.length;
+
+  const selectAllButton = document.getElementById('select-all-button');
+  const downloadButton = document.getElementById('download-selected-button');
+  const deleteButton = document.getElementById('delete-selected-button');
+
+  if (!selectAllButton || !downloadButton || !deleteButton) return;
+
+  downloadButton.disabled = selectedCount === 0;
+  deleteButton.disabled = selectedCount === 0;
+
+  if (totalCount === 0) {
+    selectAllButton.textContent = 'Select All';
+    selectAllButton.disabled = true;
+    return;
+  }
+
+  selectAllButton.disabled = false;
+
+  if (selectedCount === totalCount) {
+    selectAllButton.textContent = 'Deselect All';
+  } else {
+    selectAllButton.textContent = 'Select All';
+  }
+}
+
+function togglePhotoSelection(photoId, checked) {
+  if (checked) {
+    selectedPhotoIds.add(photoId);
+  } else {
+    selectedPhotoIds.delete(photoId);
+  }
+
+  const card = document.querySelector(
+    `.photo-card[data-photo-id="${CSS.escape(String(photoId))}"]`
+  );
+
+  if (card) {
+    card.classList.toggle('selected', checked);
+  }
+
+  updateSelectionControls();
+}
+
+function toggleSelectAll() {
+  if (photos.length === 0) return;
+
+  const allSelected = selectedPhotoIds.size === photos.length;
+
+  selectedPhotoIds.clear();
+
+  if (!allSelected) {
+    photos.forEach(photo => {
+      selectedPhotoIds.add(photo.id);
+    });
+  }
+
+  renderPhotos();
+}
+
+async function deleteSelectedPhotos() {
+  const selectedPhotos = photos.filter(photo =>
+    selectedPhotoIds.has(photo.id)
+  );
+
+  if (selectedPhotos.length === 0) return;
+
+  const confirmed = window.confirm(
+    `Delete ${selectedPhotos.length} selected ${
+      selectedPhotos.length === 1 ? 'photo' : 'photos'
+    } from the gallery?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const transaction = photoDatabase.transaction(
+      PHOTO_ASSET_STORE,
+      'readwrite'
+    );
+
+    const store = transaction.objectStore(PHOTO_ASSET_STORE);
+
+    selectedPhotos.forEach(photo => {
+      store.delete(photo.id);
+    });
+
+    await new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onerror = () =>
+        reject(transaction.error || new Error('Could not delete photos.'));
+      transaction.onabort = () =>
+        reject(transaction.error || new Error('Photo deletion was aborted.'));
+    });
+
+    selectedPhotos.forEach(photo => {
+      selectedPhotoIds.delete(photo.id);
+    });
+
+    photos = photos.filter(photo => !selectedPhotoIds.has(photo.id));
+
+    // Recalculate using IDs that were deleted.
+    const deletedIds = new Set(selectedPhotos.map(photo => photo.id));
+    photos = photos.filter(photo => !deletedIds.has(photo.id));
+
+    selectedPhotoIds.clear();
+
+    // Update latest photo record.
+    const latestTransaction = photoDatabase.transaction(
+      PHOTO_ASSET_STORE,
+      'readwrite'
+    );
+
+    const latestStore = latestTransaction.objectStore(PHOTO_ASSET_STORE);
+
+    const latestRequest = latestStore.get(LATEST_PHOTO_ID);
+
+    latestRequest.onsuccess = () => {
+      const latest = latestRequest.result;
+
+      if (latest && deletedIds.has(latest.galleryRecordId)) {
+        const replacement = photos[0];
+
+        if (replacement) {
+          latestStore.put({
+            id: LATEST_PHOTO_ID,
+            galleryRecordId: replacement.id,
+            capturedAt: replacement.capturedAt
+          });
+        } else {
+          latestStore.delete(LATEST_PHOTO_ID);
+        }
+      }
+    };
+
+    renderPhotos();
+
+  } catch (error) {
+    alert(`Could not delete selected photos: ${error.message}`);
+  }
+}
+
+async function downloadSelectedPhotos() {
+  const selectedPhotos = photos.filter(photo =>
+    selectedPhotoIds.has(photo.id)
+  );
+
+  if (selectedPhotos.length === 0) return;
+
+  const confirmed = window.confirm(
+    `Download ${selectedPhotos.length} selected ${
+      selectedPhotos.length === 1 ? 'photo' : 'photos'
+    }?`
+  );
+
+  if (!confirmed) return;
+
+  for (let i = 0; i < selectedPhotos.length; i++) {
+    const photo = selectedPhotos[i];
+
+    const link = document.createElement('a');
+    link.href = photo.data;
+    link.download = `lumabooth-${photo.id}.jpg`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Small delay helps the browser process multiple downloads.
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+}
 
     function openPhotoDatabase() {
       return new Promise((resolve, reject) => {
@@ -270,80 +533,148 @@
     }
 
     function renderPhotos() {
-      const grid = document.getElementById('photo-grid');
-      const emptyState = document.getElementById('empty-state');
-      grid.replaceChildren();
-      document.getElementById('photo-count').textContent = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`;
-      emptyState.hidden = photos.length > 0;
+  const grid = document.getElementById('photo-grid');
+  const emptyState = document.getElementById('empty-state');
 
-      photos.forEach((photo) => {
-        const card = document.createElement('article');
-        card.className = 'photo-card';
+  grid.replaceChildren();
 
-        const previewButton = document.createElement('button');
-        previewButton.className = 'photo-preview';
-        previewButton.type = 'button';
-        previewButton.setAttribute('aria-label', `Preview photo from ${formatPhotoDate(photo.capturedAt)}`);
-        const image = document.createElement('img');
-        image.src = photo.data;
-        image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
-        previewButton.appendChild(image);
-        previewButton.addEventListener('click', () => {
-  // Store the selected photo AND its capture session.
-  // All photos taken in the same 3-photo capture
-  // have the same captureSessionId.
-  sessionStorage.setItem(
-    'lumabooth_selected_share_photo',
-    JSON.stringify({
-      id: photo.id,
-      data: photo.data,
-      captureSessionId: photo.captureSessionId || null,
-      cameraNumber: photo.cameraNumber || 1
-    })
-  );
+  document.getElementById('photo-count').textContent =
+    `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`;
 
-  // IMPORTANT:
-  // Clear the previous final rendered photo.
-  // Otherwise share.html may reuse the old result.
-  sessionStorage.removeItem(
-    'lumabooth_final_photo_result_v1'
-  );
+  emptyState.hidden = photos.length > 0;
 
-  sessionStorage.removeItem(
-    'lumabooth_cloud_upload_error_v1'
-  );
+  photos.forEach((photo) => {
+    const card = document.createElement('article');
+    card.className = 'photo-card';
+    card.dataset.photoId = photo.id;
 
-  sessionStorage.removeItem(
-    'lumabooth_cloud_upload_failures_v1'
-  );
+    const isSelected = selectedPhotoIds.has(photo.id);
 
-  window.location.href = 'share.html';
-});
-
-        const info = document.createElement('div');
-        info.className = 'photo-info';
-        const date = document.createElement('div');
-        date.className = 'photo-date';
-        date.textContent = formatPhotoDate(photo.capturedAt);
-
-        const actions = document.createElement('div');
-        actions.className = 'photo-actions';
-        const download = document.createElement('a');
-        download.href = photo.data;
-        download.download = `lumabooth-${photo.id}.png`;
-        download.textContent = 'Download';
-        const remove = document.createElement('button');
-        remove.className = 'delete-photo';
-        remove.type = 'button';
-        remove.textContent = 'Delete';
-        remove.addEventListener('click', () => deletePhoto(photo));
-
-        actions.append(download, remove);
-        info.append(date, actions);
-        card.append(previewButton, info);
-        grid.appendChild(card);
-      });
+    if (isSelected) {
+      card.classList.add('selected');
     }
+
+    /* Image wrapper */
+    const previewWrapper = document.createElement('div');
+    previewWrapper.className = 'photo-preview-wrapper';
+
+    /* Checkbox */
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'photo-select';
+    checkbox.checked = isSelected;
+    checkbox.setAttribute(
+      'aria-label',
+      `Select photo from ${formatPhotoDate(photo.capturedAt)}`
+    );
+
+    checkbox.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+    checkbox.addEventListener('change', () => {
+      togglePhotoSelection(photo.id, checkbox.checked);
+    });
+
+    /* Preview button */
+    const previewButton = document.createElement('button');
+    previewButton.className = 'photo-preview';
+    previewButton.type = 'button';
+    previewButton.setAttribute(
+      'aria-label',
+      `Preview photo from ${formatPhotoDate(photo.capturedAt)}`
+    );
+
+    const image = document.createElement('img');
+
+    image.src = photo.data;
+    image.alt =
+      `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
+
+    previewButton.appendChild(image);
+
+    previewButton.addEventListener('click', () => {
+
+      // Store selected photo and capture session.
+      sessionStorage.setItem(
+        'lumabooth_selected_share_photo',
+        JSON.stringify({
+          id: photo.id,
+          data: photo.data,
+          captureSessionId: photo.captureSessionId || null,
+          cameraNumber: photo.cameraNumber || 1
+        })
+      );
+
+      // Clear previous final rendered photo.
+      sessionStorage.removeItem(
+        'lumabooth_final_photo_result_v1'
+      );
+
+      sessionStorage.removeItem(
+        'lumabooth_cloud_upload_error_v1'
+      );
+
+      sessionStorage.removeItem(
+        'lumabooth_cloud_upload_failures_v1'
+      );
+
+      window.location.href = 'share.html';
+    });
+
+    previewWrapper.append(
+      checkbox,
+      previewButton
+    );
+
+    /* Photo information */
+    const info = document.createElement('div');
+    info.className = 'photo-info';
+
+    const date = document.createElement('div');
+    date.className = 'photo-date';
+    date.textContent = formatPhotoDate(photo.capturedAt);
+
+    /* Individual actions */
+    const actions = document.createElement('div');
+    actions.className = 'photo-actions';
+
+    const download = document.createElement('a');
+
+    download.href = photo.data;
+    download.download = `lumabooth-${photo.id}.jpg`;
+    download.textContent = 'Download';
+
+    const remove = document.createElement('button');
+
+    remove.className = 'delete-photo';
+    remove.type = 'button';
+    remove.textContent = 'Delete';
+
+    remove.addEventListener('click', () => {
+      deletePhoto(photo);
+    });
+
+    actions.append(
+      download,
+      remove
+    );
+
+    info.append(
+      date,
+      actions
+    );
+
+    card.append(
+      previewWrapper,
+      info
+    );
+
+    grid.appendChild(card);
+  });
+
+  updateSelectionControls();
+}
 
     function formatPhotoDate(timestamp) {
       return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
@@ -356,29 +687,57 @@
     }
 
     async function deletePhoto(photo) {
-      if (!window.confirm('Delete this photo from the gallery?')) return;
-      const transaction = photoDatabase.transaction(PHOTO_ASSET_STORE, 'readwrite');
-      const store = transaction.objectStore(PHOTO_ASSET_STORE);
-      store.delete(photo.id);
-      const latestRequest = store.get(LATEST_PHOTO_ID);
-      latestRequest.onsuccess = () => {
-        if (latestRequest.result?.galleryRecordId === photo.id) {
-          const replacement = photos.find((item) => item.id !== photo.id);
-          if (replacement) {
-            store.put({ id: LATEST_PHOTO_ID, galleryRecordId: replacement.id, capturedAt: replacement.capturedAt });
-          } else {
-            store.delete(LATEST_PHOTO_ID);
-          }
+  if (!window.confirm('Delete this photo from the gallery?')) return;
+
+  try {
+    const transaction = photoDatabase.transaction(
+      PHOTO_ASSET_STORE,
+      'readwrite'
+    );
+
+    const store = transaction.objectStore(PHOTO_ASSET_STORE);
+
+    store.delete(photo.id);
+
+    const latestRequest = store.get(LATEST_PHOTO_ID);
+
+    latestRequest.onsuccess = () => {
+      if (latestRequest.result?.galleryRecordId === photo.id) {
+        const replacement = photos.find(
+          item => item.id !== photo.id
+        );
+
+        if (replacement) {
+          store.put({
+            id: LATEST_PHOTO_ID,
+            galleryRecordId: replacement.id,
+            capturedAt: replacement.capturedAt
+          });
+        } else {
+          store.delete(LATEST_PHOTO_ID);
         }
-      };
-      transaction.oncomplete = async () => {
-        photos = photos.filter((item) => item.id !== photo.id);
-        renderPhotos();
-      };
-      transaction.onerror = () => {
-        document.getElementById('photo-count').textContent = 'Could not delete photo';
-      };
-    }
+      }
+    };
+
+    transaction.oncomplete = () => {
+      selectedPhotoIds.delete(photo.id);
+
+      photos = photos.filter(
+        item => item.id !== photo.id
+      );
+
+      renderPhotos();
+    };
+
+    transaction.onerror = () => {
+      document.getElementById('photo-count').textContent =
+        'Could not delete photo';
+    };
+
+  } catch (error) {
+    alert(`Could not delete photo: ${error.message}`);
+  }
+}
 
     async function goBackToBooth() {
       if (history.length > 1) history.back();
