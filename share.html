@@ -1331,68 +1331,164 @@ async function printPhotoCopies(quantity) {
 
     async function saveFinalPhoto(template, photosByCamera) {
       const status = document.getElementById('final-photo-status');
-      status.textContent = 'Saving final photo to this computer...';
+      status.textContent = 'Saving final photo to Supabase...';
+
       try {
         const previousResult = JSON.parse(
           sessionStorage.getItem(FINAL_PHOTO_RESULT_KEY) || 'null'
         );
 
-        // Reuse the saved result, but regenerate the QR from the public
-        // Supabase URL when this page is opened again.
-        if (
-          previousResult?.filename &&
-          (previousResult?.cloudUrl ||
-            previousResult?.downloadUrl ||
-            previousResult?.qrCodeDataUrl)
-        ) {
+        // Reuse an already-uploaded photo for this capture.
+        if (previousResult?.filename &&
+            (previousResult?.cloudUrl ||
+             previousResult?.downloadUrl ||
+             previousResult?.qrCodeDataUrl)) {
           await showSavedPhotoResult(previousResult);
           return;
         }
 
-        const canvas = await renderFinalPhotoCanvas(template, photosByCamera);
+        // ------------------------------------------------------------
+        // 1. Render the complete final photo.
+        // ------------------------------------------------------------
+        const canvas = await renderFinalPhotoCanvas(
+          template,
+          photosByCamera
+        );
+
         const imageBlob = await blobFromCanvas(canvas);
-        const activeEvent = JSON.parse(localStorage.getItem(ACTIVE_EVENT_KEY) || 'null');
-        if (!activeEvent?.id || !activeEvent?.name) throw new Error('Launch a named event before saving photos.');
-        let cloudUrl = null;
-        let cloudError = null;
-        try {
-          const { uploadPhoto } = await import('./supabase.js');
-          const sessionId = sessionStorage.getItem('lumabooth_capture_session_id_v1') || `session-${crypto.randomUUID()}`;
-          const cloudPhoto = await uploadPhoto(imageBlob, sessionId, activeEvent.name);
-          cloudUrl = cloudPhoto.publicUrl;
-        } catch(error) {
-          console.warn('Final photo could not be uploaded to Supabase:', error);
-          cloudError = String(error?.message || 'Upload failed').slice(0, 160);
-          try { sessionStorage.setItem('lumabooth_cloud_upload_error_v1', cloudError); } catch(e) {}
-        }
-        const uploadQuery = new URLSearchParams({ eventId: activeEvent.id, eventName: activeEvent.name });
-        if (cloudUrl) uploadQuery.set('cloudUrl', cloudUrl);
-        const response = await fetch(`/api/photos?${uploadQuery}`, {
-          method: 'POST',
-          headers: { 'Content-Type': imageBlob.type },
-          body: imageBlob
-        });
-        const result = await response.json();
-        if (!response.ok) {
+
+        // ------------------------------------------------------------
+        // 2. Read the active event.
+        // ------------------------------------------------------------
+        const activeEvent = JSON.parse(
+          localStorage.getItem(ACTIVE_EVENT_KEY) || 'null'
+        );
+
+        if (!activeEvent?.id || !activeEvent?.name) {
           throw new Error(
-            result.error || 'The server could not save the final photo.'
+            'Launch a named event before saving photos.'
           );
         }
 
-        // /api/photos may not return cloudUrl, so preserve the public
-        // Supabase URL that uploadPhoto() returned.
-        result.cloudUrl = cloudUrl || result.cloudUrl || null;
-        result.cloudError = cloudError;
+        // ------------------------------------------------------------
+        // 3. Upload directly to Supabase.
+        //    NO /api/photos call is required.
+        // ------------------------------------------------------------
+        let cloudPhoto;
 
+        try {
+          const { uploadPhoto } = await import('./supabase.js');
+
+          const sessionId =
+            sessionStorage.getItem(
+              'lumabooth_capture_session_id_v1'
+            ) ||
+            `session-${crypto.randomUUID()}`;
+
+          // Keep the session ID for future page loads.
+          try {
+            sessionStorage.setItem(
+              'lumabooth_capture_session_id_v1',
+              sessionId
+            );
+          } catch (e) {}
+
+          cloudPhoto = await uploadPhoto(
+            imageBlob,
+            sessionId,
+            activeEvent.name
+          );
+
+        } catch (error) {
+          console.error(
+            'Supabase photo upload failed:',
+            error
+          );
+
+          const message = String(
+            error?.message || 'Supabase upload failed'
+          ).slice(0, 300);
+
+          try {
+            sessionStorage.setItem(
+              'lumabooth_cloud_upload_error_v1',
+              message
+            );
+          } catch (e) {}
+
+          throw new Error(
+            `Supabase upload failed: ${message}`
+          );
+        }
+
+        // ------------------------------------------------------------
+        // 4. Get the public URL returned by Supabase.
+        // ------------------------------------------------------------
+        const cloudUrl =
+          cloudPhoto?.publicUrl ||
+          cloudPhoto?.public_url ||
+          cloudPhoto?.url ||
+          '';
+
+        if (!cloudUrl) {
+          throw new Error(
+            'Supabase upload succeeded, but no public photo URL was returned. Check that the booth-photo bucket is public.'
+          );
+        }
+
+        // ------------------------------------------------------------
+        // 5. Create our own final result.
+        //    This replaces the old /api/photos response.
+        // ------------------------------------------------------------
+        const filename =
+          cloudPhoto?.filename ||
+          cloudPhoto?.name ||
+          cloudPhoto?.path?.split('/').pop() ||
+          `photo-${Date.now()}.jpg`;
+
+        const result = {
+          success: true,
+          eventId: activeEvent.id,
+          eventName: activeEvent.name,
+          filename,
+          cloudUrl,
+          downloadUrl: cloudUrl,
+          cloudError: null,
+          savedAt: new Date().toISOString()
+        };
+
+        // ------------------------------------------------------------
+        // 6. Save the result in this capture session.
+        // ------------------------------------------------------------
         sessionStorage.setItem(
           FINAL_PHOTO_RESULT_KEY,
           JSON.stringify(result)
         );
 
+        try {
+          sessionStorage.removeItem(
+            'lumabooth_cloud_upload_error_v1'
+          );
+        } catch (e) {}
+
+        // ------------------------------------------------------------
+        // 7. Generate QR from the public Supabase URL.
+        // ------------------------------------------------------------
         await showSavedPhotoResult(result);
-      } catch(error) {
-        const connectionHint = error instanceof TypeError ? ' Check the LumaBooth server connection.' : '';
-        status.textContent = `Photo not saved: ${error.message}${connectionHint}`;
+
+      } catch (error) {
+        console.error(
+          'Final photo could not be saved:',
+          error
+        );
+
+        const connectionHint =
+          error instanceof TypeError
+            ? ' Check the internet/Supabase connection.'
+            : '';
+
+        status.textContent =
+          `Photo not saved: ${error.message || error}${connectionHint}`;
       }
     }
 
