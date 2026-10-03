@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LumaBooth (dslrBooth) - Saved Events</title>
+  <title>SnapNest (dslrBooth) - Saved Events</title>
   <!-- Load Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Load FontAwesome 6 for pixel-accurate UI icons -->
@@ -28,7 +28,7 @@
               hover: '#353438',
               pink: '#db2777',
               pinkBright: '#e11d48',
-              accent: '#d82b6b',
+              accent: '#f85b00',
               accentHover: '#c0225d',
               olive: '#8aa14b',
               cherry: '#8a233b',
@@ -135,10 +135,10 @@
   <header class="h-9 bg-[#141315] border-b border-[#2a292d] flex items-center justify-between px-3 shrink-0 select-none z-30">
     <div class="flex items-center gap-2.5">
       <!-- LumaBooth / dslrBooth Logo Icon -->
-      <div class="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] shadow-sm shadow-[#d82b6b]/40">
+      <div class="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-tr from-[#f85b00] to-[#f43f5e] shadow-sm shadow-[#f85b00]/40">
         <i class="fa-solid fa-camera text-white text-xs"></i>
       </div>
-      <span class="text-xs font-semibold tracking-wide text-zinc-200">LumaBooth (dslrBooth) – Saved Events</span>
+      <span class="text-xs font-semibold tracking-wide text-zinc-200">SnapNest (dslrBooth) – Saved Events</span>
     </div>
 
     <!-- OS Window Control Icons -->
@@ -221,7 +221,7 @@
           id="event-search-input"
           type="text" 
           placeholder="Find your event" 
-          class="w-full bg-transparent border-b border-zinc-700 focus:border-[#d82b6b] py-2 px-1 text-sm italic placeholder-zinc-500 text-zinc-200 outline-none transition"
+          class="w-full bg-transparent border-b border-zinc-700 focus:border-[#f85b00] py-2 px-1 text-sm italic placeholder-zinc-500 text-zinc-200 outline-none transition"
         >
         <i class="fa-solid fa-magnifying-glass absolute right-1 top-2.5 text-zinc-400 text-sm pointer-events-none"></i>
       </div>
@@ -230,7 +230,7 @@
       <div id="events-list" class="flex flex-col gap-2.5 mt-2">
         
         <!-- Active Wedding Event Card -->
-        <div class="event-card active group relative bg-[#272629] p-3.5 rounded-xl border border-[#d82b6b] shadow-md shadow-[#d82b6b]/10 cursor-pointer flex items-center gap-3.5 transition-all" data-event-id="event-wedding-event">
+        <div class="event-card active group relative bg-[#272629] p-3.5 rounded-xl border border-[#f85b00] shadow-md shadow-[#f85b00]/10 cursor-pointer flex items-center gap-3.5 transition-all" data-event-id="event-wedding-event">
           <div class="w-6 h-6 rounded-full bg-white text-zinc-900 flex items-center justify-center shrink-0 shadow-sm">
             <i class="fa-solid fa-check text-[11px] font-bold"></i>
           </div>
@@ -299,28 +299,28 @@
         <!-- 4 Capture Action Nodes in Viewport -->
         <div class="relative z-10 flex items-center gap-4 lg:gap-6">
           <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
-            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+            <div class="w-10 h-10 rounded-full bg-[#f85b00] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#f85b00]/40">
               <i class="fa-solid fa-camera text-sm"></i>
             </div>
             <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">Print</span>
           </div>
 
           <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
-            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+            <div class="w-10 h-10 rounded-full bg-[#f85b00] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#f85b00]/40">
               <i class="fa-solid fa-layer-group text-xs"></i>
             </div>
             <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">GIF</span>
           </div>
 
           <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
-            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+            <div class="w-10 h-10 rounded-full bg-[#f85b00] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#f85b00]/40">
               <i class="fa-solid fa-arrows-spin text-sm"></i>
             </div>
             <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">360/Slow-mo</span>
           </div>
 
           <div class="flex flex-col items-center gap-1 cursor-pointer group/icon">
-            <div class="w-10 h-10 rounded-full bg-[#d82b6b] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#d82b6b]/40">
+            <div class="w-10 h-10 rounded-full bg-[#f85b00] hover:bg-[#be215b] hover:scale-105 transition flex items-center justify-center text-white shadow-md shadow-[#f85b00]/40">
               <i class="fa-solid fa-video text-xs"></i>
             </div>
             <span class="text-[10px] text-zinc-400 group-hover/icon:text-white font-medium">Video</span>
@@ -330,7 +330,7 @@
 
       <!-- Mode Quick Switcher Row -->
       <div class="flex items-center justify-around py-5">
-        <button class="mode-tab flex flex-col items-center gap-1.5 text-[#d82b6b] hover:scale-105 transition" data-mode="Photo">
+        <button class="mode-tab flex flex-col items-center gap-1.5 text-[#f85b00] hover:scale-105 transition" data-mode="Photo">
           <i class="fa-regular fa-image text-3xl"></i>
           <span class="text-xs font-semibold">Photo</span>
         </button>
@@ -358,33 +358,33 @@
       <div class="grid grid-cols-2 gap-6 pt-4 text-xs">
         <!-- Feature Sub-options -->
         <div class="flex flex-col gap-2.5 font-medium text-zinc-300">
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>AI Portraits</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Effects</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Digital Props</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Beauty Filter</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Watermark</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Post Processing</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
-          <div class="hover:text-[#d82b6b] cursor-pointer flex items-center justify-between group">
+          <div class="hover:text-[#f85b00] cursor-pointer flex items-center justify-between group">
             <span>Disclaimer</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#d82b6b] transition"></i>
+            <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 group-hover:text-[#f85b00] transition"></i>
           </div>
         </div>
 
@@ -393,7 +393,7 @@
           <h4 class="font-bold text-white text-xs mb-1">Sharing Configuration</h4>
 
           <div class="flex items-start gap-2.5">
-            <i class="fa-solid fa-check text-[#d82b6b] font-bold mt-0.5"></i>
+            <i class="fa-solid fa-check text-[#f85b00] font-bold mt-0.5"></i>
             <div>
               <span class="font-bold text-white block">Email</span>
               <p class="text-zinc-400 mt-0.5">Reply to: <span class="text-zinc-300 font-mono">no-reply@mail.fotoshare.co</span></p>
@@ -402,7 +402,7 @@
           </div>
 
           <div class="flex items-start gap-2.5 mt-2">
-            <i class="fa-solid fa-check text-[#d82b6b] font-bold mt-0.5"></i>
+            <i class="fa-solid fa-check text-[#f85b00] font-bold mt-0.5"></i>
             <div>
               <span class="font-bold text-white block">SMS</span>
               <p class="text-zinc-400 mt-0.5">Twilio / Cloud Gateway active</p>
@@ -423,7 +423,7 @@
       <div class="flex-1 flex gap-3.5 overflow-x-auto pb-4 pt-1 items-start">
 
         <!-- Template 1: Classic Single Polar Style -->
-        <div class="template-choice shrink-0 w-28 bg-[#f5f5f5] p-2 rounded shadow-md border-2 border-transparent hover:border-[#d82b6b] transition-all cursor-pointer">
+        <div class="template-choice shrink-0 w-28 bg-[#f5f5f5] p-2 rounded shadow-md border-2 border-transparent hover:border-[#f85b00] transition-all cursor-pointer">
           <div class="w-full flex flex-col gap-1.5">
             <div class="h-20 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-2xl font-bold shadow-inner">
               1
@@ -435,7 +435,7 @@
         </div>
 
         <!-- Template 2: Traditional 3-Up Strip (Dark Crimson Plaid Themed) -->
-        <div class="template-choice selected shrink-0 w-28 bg-[#70192e] p-2 rounded shadow-lg border-2 border-[#d82b6b] transition-all cursor-pointer relative strip-pattern doodle-border">
+        <div class="template-choice selected shrink-0 w-28 bg-[#70192e] p-2 rounded shadow-lg border-2 border-[#f85b00] transition-all cursor-pointer relative strip-pattern doodle-border">
           <div class="w-full flex flex-col gap-2">
             <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
               1
@@ -454,7 +454,7 @@
         </div>
 
         <!-- Template 3: 3-Up Strip Variant (Rich Burgundy Pattern) -->
-        <div class="template-choice shrink-0 w-28 bg-[#8a233b] p-2 rounded shadow-md border-2 border-transparent hover:border-[#d82b6b] transition-all cursor-pointer relative strip-pattern doodle-border">
+        <div class="template-choice shrink-0 w-28 bg-[#8a233b] p-2 rounded shadow-md border-2 border-transparent hover:border-[#f85b00] transition-all cursor-pointer relative strip-pattern doodle-border">
           <div class="w-full flex flex-col gap-2">
             <div class="h-16 bg-[#8aa14b] rounded-sm flex items-center justify-center text-white/90 text-xl font-bold shadow-inner">
               1
@@ -492,7 +492,7 @@
         <p class="text-sm font-semibold text-zinc-100 mt-5">What would you like to call it?</p>
 
         <!-- Underlined Event Name Input -->
-        <div class="w-full max-w-sm mt-8 border-b border-zinc-600 focus-within:border-[#d82b6b] transition-colors">
+        <div class="w-full max-w-sm mt-8 border-b border-zinc-600 focus-within:border-[#f85b00] transition-colors">
           <input 
             type="text" 
             id="modal-event-name" 
@@ -511,7 +511,7 @@
         <span class="text-xs font-medium text-zinc-400 my-3 select-none">or</span>
 
         <!-- Launch Event Main Pink Action Button -->
-        <button id="modal-launch-btn" class="px-8 py-2.5 rounded-full bg-[#d82b6b] hover:bg-[#be215b] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#d82b6b]/30 transition active:scale-95">
+        <button id="modal-launch-btn" class="px-8 py-2.5 rounded-full bg-[#f85b00] hover:bg-[#be215b] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#f85b00]/30 transition active:scale-95">
           <i class="fa-solid fa-bolt text-xs"></i> Launch Event
         </button>
       </div>
@@ -520,17 +520,17 @@
       <div class="bg-[#171618] border-t border-zinc-800/80 px-6 py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 text-left">
           <!-- 4-Square App Dashboard Icon -->
-          <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#d82b6b] to-[#ec4899] flex items-center justify-center shrink-0 shadow-md">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#f85b00] to-[#ec4899] flex items-center justify-center shrink-0 shadow-md">
             <i class="fa-solid fa-table-cells-large text-white text-base"></i>
           </div>
           <div>
-            <div class="text-xs font-bold text-white">Manage on LumaBooth Dashboard</div>
+            <div class="text-xs font-bold text-white">Manage on SnapNest Dashboard</div>
             <div class="text-[11px] text-zinc-400">Configure and sync from any browser</div>
           </div>
         </div>
 
         <button class="shrink-0 px-3.5 py-1.5 rounded-full border border-zinc-600 hover:border-zinc-400 bg-transparent text-[11px] font-semibold text-zinc-200 flex items-center gap-1.5 hover:bg-zinc-800 transition">
-          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> LumaBooth Dashboard
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> SnapNest Dashboard
         </button>
       </div>
 
@@ -585,7 +585,7 @@
       document.querySelectorAll('.event-card').forEach(card => {
         const active = card === activeCard;
         card.classList.toggle('active', active);
-        card.classList.toggle('border-[#d82b6b]', active);
+        card.classList.toggle('border-[#f85b00]', active);
         card.classList.toggle('bg-[#272629]', active);
         card.classList.toggle('border-zinc-700/60', !active);
         const title = card.querySelector('.event-title');
@@ -762,10 +762,10 @@
     modeTabs.forEach(tab => {
       tab.addEventListener('click', () => {
         modeTabs.forEach(t => {
-          t.classList.remove('text-[#d82b6b]', 'scale-105');
+          t.classList.remove('text-[#f85b00]', 'scale-105');
           t.classList.add('text-zinc-400');
         });
-        tab.classList.add('text-[#d82b6b]', 'scale-105');
+        tab.classList.add('text-[#f85b00]', 'scale-105');
         tab.classList.remove('text-zinc-400');
       });
     });
@@ -775,10 +775,10 @@
     templateStrips.forEach(strip => {
       strip.addEventListener('click', () => {
         templateStrips.forEach(s => {
-          s.classList.remove('border-[#d82b6b]', 'shadow-lg');
+          s.classList.remove('border-[#f85b00]', 'shadow-lg');
           s.classList.add('border-transparent');
         });
-        strip.classList.add('border-[#d82b6b]', 'shadow-lg');
+        strip.classList.add('border-[#f85b00]', 'shadow-lg');
         strip.classList.remove('border-transparent');
       });
     });

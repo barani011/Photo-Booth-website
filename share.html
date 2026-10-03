@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LumaBooth (dslrBooth) - Share + Print</title>
+  <title>SnapNest (dslrBooth) - Share + Print</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Font: Inter -->
@@ -147,10 +147,10 @@
   <!-- Top Titlebar -->
   <header class="h-[38px] bg-[#121113] border-b border-[#232224] flex items-center justify-between px-4 text-xs z-50 shrink-0 select-none">
     <div class="flex items-center gap-3">
-      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
+      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#f85b00] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
         🐾
       </div>
-      <span class="font-medium text-[#ececec]">LumaBooth (dslrBooth) - Share + Print</span>
+      <span class="font-medium text-[#ececec]">SnapNest (dslrBooth) - Share + Print</span>
     </div>
     <div class="flex items-center gap-4 text-[#928f95]">
       <span class="hover:text-white cursor-pointer px-1">—</span>
@@ -160,7 +160,7 @@
   </header>
 
   <!-- Hot Pink Top Accent Bar -->
-  <div class="h-1 bg-[#d82b6b] w-full shrink-0"></div>
+  <div class="h-1 bg-[#f85b00] w-full shrink-0"></div>
 
   <!-- Main Viewport: Left Polaroid Stack, Center Dynamic Strip, Right Share Actions -->
   <main class="flex-1 grid grid-cols-[280px_1fr_320px] h-[calc(100vh-42px)] relative p-6 overflow-hidden">
@@ -168,7 +168,7 @@
     <!-- Top Right 'Done' Button -->
     <div class="absolute top-6 right-8 z-30 flex items-center gap-3">
       <a href="gallery.html" class="border border-[#555159] bg-[#27252a] hover:bg-[#36333a] text-white font-semibold text-sm py-2.5 px-5 rounded-full no-underline transition-colors">Gallery</a>
-      <button onclick="window.location.href='kiosk.html'" class="bg-[#d82b6b] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3 px-16 rounded-full shadow-lg shadow-[#d82b6b]/40 cursor-pointer border-0 transition-transform">
+      <button onclick="window.location.href='kiosk.html'" class="bg-[#f85b00] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3 px-16 rounded-full shadow-lg shadow-[#f85b00]/40 cursor-pointer border-0 transition-transform">
         Done
       </button>
     </div>
@@ -176,7 +176,7 @@
     <!-- 1. LEFT: Tilted Polaroid Preview Stack -->
     <aside class="flex items-start justify-center pt-8">
       <div class="relative w-[180px] h-[180px]">
-        <div class="absolute inset-0 bg-[#882236] rounded-lg rotate-6 shadow-xl border-2 border-[#d82b6b]"></div>
+        <div class="absolute inset-0 bg-[#882236] rounded-lg rotate-6 shadow-xl border-2 border-[#f85b00]"></div>
         <div class="absolute inset-0 bg-white p-2 rounded -rotate-6 shadow-2xl flex flex-col items-center overflow-hidden">
           <img id="polaroid-preview-img" class="w-full h-full object-cover rounded" src="" alt="Captured snapshot">
         </div>
@@ -198,7 +198,7 @@
 
       <!-- Email -->
       <button onclick="shareAction('Email')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
-        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Email</span>
+        <span class="text-xl font-medium text-white group-hover:text-[#f85b00] transition">Email</span>
         <div class="w-16 h-16 rounded-full bg-[#e59f2c] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
           <i class="fa-regular fa-envelope"></i>
         </div>
@@ -206,7 +206,7 @@
 
       <!-- SMS -->
       <button onclick="shareAction('SMS')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
-        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">SMS</span>
+        <span class="text-xl font-medium text-white group-hover:text-[#f85b00] transition">SMS</span>
         <div class="w-16 h-16 rounded-full bg-[#37c844] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
           <i class="fa-regular fa-comment-dots"></i>
         </div>
@@ -214,7 +214,7 @@
 
       <!-- Scan QR -->
       <button onclick="shareAction('QR Code')" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
-        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Scan QR</span>
+        <span class="text-xl font-medium text-white group-hover:text-[#f85b00] transition">Scan QR</span>
         <div class="w-16 h-16 rounded-full bg-[#b7a9c8] flex items-center justify-center text-[#42374e] shadow-lg text-2xl group-hover:scale-110 transition">
           <i class="fa-solid fa-qrcode"></i>
         </div>
@@ -222,7 +222,7 @@
 
       <!-- Print -->
       <button id="open-print-quantity" type="button" class="flex items-center gap-4 bg-transparent border-0 cursor-pointer group text-right">
-        <span class="text-xl font-medium text-white group-hover:text-[#d82b6b] transition">Print</span>
+        <span class="text-xl font-medium text-white group-hover:text-[#f85b00] transition">Print</span>
         <div class="w-16 h-16 rounded-full bg-[#e53935] flex items-center justify-center text-white shadow-lg text-2xl group-hover:scale-110 transition">
           <i class="fa-solid fa-print"></i>
         </div>
@@ -239,7 +239,7 @@
     </div>
     <img id="qr-code-image" alt="QR code linking to your photo download">
     <p class="mb-4 text-sm text-[#b3b1b6]">Scan with your phone to download the finished photo.</p>
-    <a id="qr-download-link" class="inline-flex rounded bg-[#d82b6b] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Download photo</a>
+    <a id="qr-download-link" class="inline-flex rounded bg-[#f85b00] px-5 py-2.5 text-sm font-semibold text-white no-underline" target="_blank" rel="noopener">Download photo</a>
   </dialog>
 
   <dialog id="print-quantity-dialog" aria-labelledby="print-quantity-title">
@@ -249,7 +249,7 @@
       <input id="print-quantity" class="mt-2 rounded border border-[#555159] bg-[#171618] px-3 py-2 text-white" type="number" min="1" max="20" step="1" value="1" required>
       <div class="mt-5 flex justify-end gap-2">
         <button id="cancel-print-quantity" type="button" class="rounded border border-[#555159] px-4 py-2 text-sm text-white hover:bg-white/10">Cancel</button>
-        <button type="submit" class="rounded bg-[#d82b6b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be205b]">Print</button>
+        <button type="submit" class="rounded bg-[#f85b00] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be205b]">Print</button>
       </div>
     </form>
   </dialog>
@@ -832,7 +832,7 @@
           layerEl.innerHTML = `<img src="${l.src}" class="w-full h-full object-contain pointer-events-none" alt="">`;
         } else if (l.type === 'text') {
           // Text label
-          layerEl.style.color = l.color || '#d82b6b';
+          layerEl.style.color = l.color || '#f85b00';
           layerEl.style.fontSize = `${Math.max(10, Math.round((l.fontSize || 22) * scale))}px`;
           layerEl.style.fontWeight = 'bold';
           layerEl.style.display = 'flex';
@@ -1169,7 +1169,7 @@ async function printPhotoCopies(quantity) {
         } else if (layer.type === 'image' && layer.src) {
           drawImageContain(context, await getImage(layer.src), layerWidth, layerHeight);
         } else if (layer.type === 'text') {
-          context.fillStyle = layer.color || '#d82b6b';
+          context.fillStyle = layer.color || '#f85b00';
           context.font = `700 ${Math.max(10, (Number(layer.fontSize) || 22) * scaleY)}px Inter, sans-serif`;
           context.textAlign = 'center';
           context.textBaseline = 'middle';

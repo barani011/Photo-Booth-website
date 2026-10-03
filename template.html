@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LumaBooth (dslrBooth) - Start - Choose Template</title>
+  <title>SnapNest (dslrBooth) - Start - Choose Template</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Font: Inter -->
@@ -46,10 +46,10 @@
   <!-- Top Window Title Bar -->
   <header class="absolute top-0 left-0 w-full h-[38px] bg-[#121113] border-b border-[#232224] flex items-center justify-between px-4 text-xs z-50">
     <div class="flex items-center gap-3">
-      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#d82b6b] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
+      <div class="w-[22px] h-[22px] bg-gradient-to-tr from-[#f85b00] to-[#f43f5e] rounded flex items-center justify-center text-white shadow-sm font-bold">
         🐾
       </div>
-      <span class="font-medium text-[#ececec]">LumaBooth (dslrBooth) - Start - Choose Template</span>
+      <span class="font-medium text-[#ececec]">SnapNest (dslrBooth) - Start - Choose Template</span>
     </div>
     <div class="flex items-center gap-4 text-[#928f95]">
       <span class="hover:text-white cursor-pointer">—</span>
@@ -60,14 +60,14 @@
 
   <!-- Top-Left Exit 'X' Button back to Photo Layout Editor -->
   <button onclick="window.location.href='kiosk.html'" class="absolute top-12 left-8 bg-transparent border-0 cursor-pointer p-2 z-20 group" title="Return to Layout Editor">
-    <svg class="w-10 h-10 stroke-[#d82b6b] group-hover:stroke-[#f43f5e] stroke-[3] fill-none transition-colors" viewBox="0 0 24 24">
+    <svg class="w-10 h-10 stroke-[#f85b00] group-hover:stroke-[#f43f5e] stroke-[3] fill-none transition-colors" viewBox="0 0 24 24">
       <line x1="18" y1="6" x2="6" y2="18"></line>
       <line x1="6" y1="6" x2="18" y2="18"></line>
     </svg>
   </button>
 
   <!-- Title in Signature Pink -->
-  <h2 class="text-3xl font-semibold text-[#d82b6b] tracking-tight mt-14">
+  <h2 class="text-3xl font-semibold text-[#f85b00] tracking-tight mt-14">
     Choose a template
   </h2>
 
@@ -88,11 +88,11 @@
   <!-- Pagination Dots & Next Button -->
   <div class="flex flex-col items-center gap-4 mb-4">
     <div class="flex items-center gap-2" id="pagination-dots">
-      <span class="w-2.5 h-2.5 rounded-full bg-[#d82b6b]"></span>
+      <span class="w-2.5 h-2.5 rounded-full bg-[#f85b00]"></span>
       <span class="w-2.5 h-2.5 rounded-full bg-[#3d3b41]"></span>
     </div>
 
-    <button onclick="proceedToCapture()" class="bg-[#d82b6b] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3.5 px-24 rounded-full shadow-lg shadow-[#d82b6b]/35 cursor-pointer border-0 transition-transform">
+    <button onclick="proceedToCapture()" class="bg-[#f85b00] hover:bg-[#be205b] active:scale-95 text-white font-semibold text-xl py-3.5 px-24 rounded-full shadow-lg shadow-[#f85b00]/35 cursor-pointer border-0 transition-transform">
       Next
     </button>
   </div>
@@ -233,7 +233,7 @@
       if (savedTemplates.length === 0) {
         carousel.innerHTML = `
           <div class="w-full text-center text-zinc-500 py-12">
-            No saved templates found. Please create one in <a href="photo-layout.html" class="text-[#d82b6b] underline">Photo Layout Editor</a>.
+            No saved templates found. Please create one in <a href="photo-layout.html" class="text-[#f85b00] underline">Photo Layout Editor</a>.
           </div>
         `;
         return;
@@ -244,7 +244,7 @@
         const isSelected = selectedTemplate && selectedTemplate.id === tpl.id;
 
         card.className = `group/card relative flex-shrink-0 w-[185px] h-[340px] rounded-2xl cursor-pointer transition-all duration-200 bg-white p-2.5 overflow-hidden flex flex-col justify-between shadow-2xl ${
-          isSelected ? 'ring-4 ring-[#d82b6b] scale-[1.02]' : 'hover:scale-[1.01] opacity-90 hover:opacity-100'
+          isSelected ? 'ring-4 ring-[#f85b00] scale-[1.02]' : 'hover:scale-[1.01] opacity-90 hover:opacity-100'
         }`;
 
         card.innerHTML = `
@@ -264,7 +264,7 @@
           </div>
 
           <!-- Selection Checkmark Badge (Bottom-Right) -->
-          <div class="absolute bottom-3 right-3 w-7 h-7 rounded-full bg-[#d82b6b] text-white items-center justify-center shadow-md ${
+          <div class="absolute bottom-3 right-3 w-7 h-7 rounded-full bg-[#f85b00] text-white items-center justify-center shadow-md ${
             isSelected ? 'flex' : 'hidden'
           }">
             <svg class="w-4 h-4 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>

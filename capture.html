@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LumaBooth (dslrBooth) - Capture</title>
+  <title>SnapNest (dslrBooth) - Capture</title>
   <style>
     * {
       box-sizing: border-box;
@@ -45,7 +45,7 @@
     .brand-logo {
       width: 22px;
       height: 22px;
-      background-color: #d82b6b;
+      background-color: #f85b00;
       border-radius: 4px;
       display: flex;
       align-items: center;
@@ -111,7 +111,7 @@
     .btn-exit-capture svg {
       width: 44px;
       height: 44px;
-      stroke: #d82b6b;
+      stroke: #f85b00;
       stroke-width: 3.5;
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -155,7 +155,7 @@
     }
 
     .progress-ring-circle {
-      stroke: #d82b6b;
+      stroke: #f85b00;
       stroke-width: 5;
       fill: transparent;
       stroke-dasharray: 691; /* 2 * PI * 110 */
@@ -168,7 +168,7 @@
       position: relative;
       font-size: 110px;
       font-weight: 500;
-      color: #d82b6b;
+      color: #f85b00;
       z-index: 2;
       line-height: 1;
     }
@@ -226,7 +226,7 @@
   <header class="titlebar">
     <div class="brand">
       <div class="brand-logo">🐾</div>
-      <span>LumaBooth (dslrBooth) - Capture</span>
+      <span>SnapNest (dslrBooth) - Capture</span>
     </div>
     <div class="window-controls">
       <span class="window-btn" title="Minimize">—</span>
@@ -428,7 +428,7 @@
         // Fallback placeholder if no webcam attached
         ctx.fillStyle = '#201f22';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#d82b6b';
+        ctx.fillStyle = '#f85b00';
         ctx.font = 'bold 50px -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('dslrBooth Guest Shot', canvas.width / 2, canvas.height / 2);
