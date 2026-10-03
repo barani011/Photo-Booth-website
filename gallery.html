@@ -288,7 +288,23 @@
         image.src = photo.data;
         image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
         previewButton.appendChild(image);
-        previewButton.addEventListener('click', () => showPhotoPreview(photo.data));
+        previewButton.addEventListener('click', () => {
+  sessionStorage.setItem('lumabooth_selected_share_photo', photo.data);
+
+  // Keep the currently selected template
+  if (selectedPhoto) {
+  document.getElementById('share-image').src = selectedPhoto;
+}
+
+  if (selectedTemplate) {
+    sessionStorage.setItem(
+      'lumabooth_selected_share_template',
+      selectedTemplate
+    );
+  }
+
+  window.location.href = 'share.html';
+});
 
         const info = document.createElement('div');
         info.className = 'photo-info';
