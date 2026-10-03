@@ -725,16 +725,30 @@
 
 
   // ============================================================
-  // 12. SAVE FINAL COMBINED PHOTO
+  // 12. SAVE FINAL COMBINED PHOTO ONLY FOR A NEW CAPTURE
   // ============================================================
+  // If the user came from Gallery, this is an OLD photo.
+  // Do NOT create/upload another database record.
+  // Only a fresh capture should be saved.
 
-  if (template) {
+  const isGallerySelection = !!selectedGalleryPhoto;
 
+  if (template && !isGallerySelection) {
     await saveFinalPhoto(
       template,
       photosByCamera
     );
+  } else if (isGallerySelection) {
+    const existingResult = JSON.parse(
+      sessionStorage.getItem(FINAL_PHOTO_RESULT_KEY) || 'null'
+    );
 
+    if (existingResult) {
+      showSavedPhotoResult(existingResult);
+    } else {
+      document.getElementById('final-photo-status').textContent =
+        'Viewing saved gallery photo';
+    }
   }
 }
 
