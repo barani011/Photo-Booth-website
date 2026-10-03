@@ -296,13 +296,15 @@ image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
 previewButton.appendChild(image);
 
 previewButton.addEventListener('click', () => {
-  // Save the selected gallery photo
   sessionStorage.setItem(
     'lumabooth_selected_share_photo',
-    photo.data
+    JSON.stringify({
+      id: photo.id,
+      data: photo.data,
+      cameraNumber: photo.cameraNumber || 1
+    })
   );
 
-  // Open Share page
   window.location.href = 'share.html';
 });
 
