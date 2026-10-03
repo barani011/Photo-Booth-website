@@ -1,9 +1,4 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-// ============================================
-// 1. SUPABASE CONFIGURATION
-// ============================================
 
 const supabaseUrl =
   'https://hhvxljqdjauyaukkfjrv.supabase.co';
@@ -12,10 +7,6 @@ const supabaseAnonKey =
   'sb_publishable__zZFUxr31uLZ1CkFvS6AFg_BQivX8hk';
 
 const PHOTO_BUCKET = 'booth-photo';
-
-// ============================================
-// 2. CONNECT TO SUPABASE
-// ============================================
 
 if (
   !supabaseUrl.startsWith('https://') ||
@@ -29,9 +20,10 @@ export const supabase = createClient(
   supabaseAnonKey
 );
 
-// ============================================
-// 3. CONVERT EVENT NAME TO FOLDER NAME
-// ============================================
+
+// ============================================================
+// EVENT FOLDER
+// ============================================================
 
 function getEventFolder(eventName) {
   const folder = String(eventName || '')
@@ -47,9 +39,10 @@ function getEventFolder(eventName) {
   return folder;
 }
 
-// ============================================
-// 4. UPLOAD PHOTO AND SAVE DATABASE RECORD
-// ============================================
+
+// ============================================================
+// UPLOAD PHOTO
+// ============================================================
 
 export async function uploadPhoto(
   photoBlob,
@@ -68,10 +61,13 @@ export async function uploadPhoto(
     throw new Error('Event name is required.');
   }
 
-  const eventFolder = getEventFolder(eventName);
+  const cleanEventName = String(eventName).trim();
+  const eventFolder = getEventFolder(cleanEventName);
+
   const photoId = crypto.randomUUID();
 
-  const contentType = photoBlob.type || 'image/jpeg';
+  const contentType =
+    photoBlob.type || 'image/jpeg';
 
   const extensionMap = {
     'image/jpeg': 'jpg',
@@ -87,119 +83,294 @@ export async function uploadPhoto(
     );
   }
 
-  // All photos from one event share the same folder.
-  const imagePath = `${eventFolder}/${photoId}.${extension}`;
 
-  // ============================================
-  // 5. UPLOAD IMAGE TO STORAGE
-  // ============================================
+  // ----------------------------------------------------------
+  // STORAGE PATH
+  // ----------------------------------------------------------
 
-  const { data: uploadData, error: uploadError } =
-    await supabase.storage
-      .from(PHOTO_BUCKET)
-      .upload(imagePath, photoBlob, {
+  const imagePath =
+    `${eventFolder}/${photoId}.${extension}`;
+
+
+  // ----------------------------------------------------------
+  // UPLOAD TO STORAGE
+  // ----------------------------------------------------------
+
+  const {
+    data: uploadData,
+    error: uploadError
+  } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(
+      imagePath,
+      photoBlob,
+      {
         contentType,
         upsert: false
-      });
+      }
+    );
 
   if (uploadError) {
-    console.error('STORAGE UPLOAD ERROR:', uploadError);
+    console.error(
+      'STORAGE UPLOAD ERROR:',
+      uploadError
+    );
 
     throw new Error(
       `Image upload failed: ${uploadError.message}`
     );
   }
 
-  // ============================================
-  // 6. SAVE DETAILS TO DATABASE
-  // ============================================
 
-  const { data: photoRecord, error: databaseError } =
-    await supabase
-      .from('photos')
-      .insert({
-        session_id: String(sessionId),
-        event_name: String(eventName).trim(),
-        image_path: uploadData.path
-      })
-      .select()
-      .single();
+  // ----------------------------------------------------------
+  // SAVE DATABASE RECORD
+  // ----------------------------------------------------------
+
+  const {
+    data: photoRecord,
+    error: databaseError
+  } = await supabase
+    .from('photos')
+    .insert({
+      session_id: String(sessionId),
+      event_name: cleanEventName,
+      image_path: uploadData.path
+    })
+    .select()
+    .single();
 
   if (databaseError) {
-    console.error('DATABASE INSERT ERROR:', databaseError);
+    console.error(
+      'DATABASE INSERT ERROR:',
+      databaseError
+    );
 
-    // The image is already in Storage.
-    // Keep it there so it is not lost.
     throw new Error(
       `Image uploaded, but database save failed: ${databaseError.message}`
     );
   }
 
-  // ============================================
-  // 7. GENERATE IMAGE URL
-  // ============================================
 
-  const { data: publicData } = supabase.storage
+  // ----------------------------------------------------------
+  // PUBLIC URL
+  // ----------------------------------------------------------
+
+  const {
+    data: publicData
+  } = supabase.storage
     .from(PHOTO_BUCKET)
     .getPublicUrl(uploadData.path);
 
-  // ============================================
-  // 8. RETURN SAVED PHOTO INFORMATION
-  // ============================================
 
-  const result = {
+  return {
     id: photoRecord.id,
     session_id: String(sessionId),
-    event_name: String(eventName).trim(),
+    event_name: cleanEventName,
     image_path: uploadData.path,
+    created_at: photoRecord.created_at,
     publicUrl: publicData.publicUrl
   };
-
-  console.log('PHOTO AND DATABASE RECORD SAVED:', result);
-
-  return result;
 }
 
-// ============================================
-// 9. GET PHOTOS FOR AN EVENT
-// ============================================
+
+// ============================================================
+// GET PHOTOS FROM DATABASE
+//
+// IMPORTANT:
+// This reads from the `photos` TABLE.
+// It does NOT read directly from Storage.
+//
+// Therefore Gallery only shows photos that have a
+// corresponding database record.
+// ============================================================
 
 export async function getEventPhotos(eventName) {
-  const eventFolder = getEventFolder(eventName);
 
-  const { data, error } = await supabase.storage
-    .from(PHOTO_BUCKET)
-    .list(eventFolder, {
-      limit: 100,
-      sortBy: {
-        column: 'name',
-        order: 'desc'
+  if (!eventName || !String(eventName).trim()) {
+    throw new Error('Event name is required.');
+  }
+
+  const cleanEventName =
+    String(eventName).trim();
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('photos')
+    .select(`
+      id,
+      session_id,
+      event_name,
+      image_path,
+      created_at
+    `)
+    .eq(
+      'event_name',
+      cleanEventName
+    )
+    .order(
+      'created_at',
+      {
+        ascending: false
       }
-    });
+    );
+
 
   if (error) {
-    console.error('EVENT PHOTO LIST ERROR:', error);
+
+    console.error(
+      'DATABASE PHOTO LIST ERROR:',
+      error
+    );
 
     throw new Error(
       `Could not load event photos: ${error.message}`
     );
   }
 
-  return (data || [])
-    .filter(file =>
-      /\.(jpg|jpeg|png|webp)$/i.test(file.name)
-    )
-    .map(file => {
-      const imagePath = `${eventFolder}/${file.name}`;
 
-      const { data: publicData } = supabase.storage
+  return (data || [])
+    .map(photo => {
+
+      const {
+        data: publicData
+      } = supabase.storage
         .from(PHOTO_BUCKET)
-        .getPublicUrl(imagePath);
+        .getPublicUrl(
+          photo.image_path
+        );
+
 
       return {
-        name: file.name,
-        image_path: imagePath,
-        publicUrl: publicData.publicUrl
+
+        id: photo.id,
+
+        session_id:
+          photo.session_id,
+
+        event_name:
+          photo.event_name,
+
+        image_path:
+          photo.image_path,
+
+        created_at:
+          photo.created_at,
+
+        publicUrl:
+          publicData.publicUrl
+
       };
+
     });
+
+}
+
+
+// ============================================================
+// GET PHOTOS FROM ONE CAPTURE SESSION
+//
+// Used by share.html when an old Gallery photo is opened.
+// ============================================================
+
+export async function getSessionPhotos(
+  sessionId,
+  eventName
+) {
+
+  if (!sessionId) {
+    throw new Error(
+      'Session ID is required.'
+    );
+  }
+
+
+  let query = supabase
+    .from('photos')
+    .select(`
+      id,
+      session_id,
+      event_name,
+      image_path,
+      created_at
+    `)
+    .eq(
+      'session_id',
+      String(sessionId)
+    )
+    .order(
+      'created_at',
+      {
+        ascending: true
+      }
+    );
+
+
+  if (
+    eventName &&
+    String(eventName).trim()
+  ) {
+    query = query.eq(
+      'event_name',
+      String(eventName).trim()
+    );
+  }
+
+
+  const {
+    data,
+    error
+  } = await query;
+
+
+  if (error) {
+
+    console.error(
+      'SESSION PHOTO LIST ERROR:',
+      error
+    );
+
+    throw new Error(
+      `Could not load capture session: ${error.message}`
+    );
+  }
+
+
+  return (data || [])
+    .map(photo => {
+
+      const {
+        data: publicData
+      } = supabase.storage
+        .from(PHOTO_BUCKET)
+        .getPublicUrl(
+          photo.image_path
+        );
+
+
+      return {
+
+        id: photo.id,
+
+        session_id:
+          photo.session_id,
+
+        event_name:
+          photo.event_name,
+
+        image_path:
+          photo.image_path,
+
+        created_at:
+          photo.created_at,
+
+        publicUrl:
+          publicData.publicUrl
+
+      };
+
+    });
+
 }
