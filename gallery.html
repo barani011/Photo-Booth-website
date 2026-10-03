@@ -281,48 +281,47 @@
         card.className = 'photo-card';
 
         const previewButton = document.createElement('button');
-previewButton.className = 'photo-preview';
-previewButton.type = 'button';
-
-previewButton.setAttribute(
-  'aria-label',
-  `Preview photo from ${formatPhotoDate(photo.capturedAt)}`
-);
-
-const image = document.createElement('img');
-image.src = photo.data;
-image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
-
-previewButton.appendChild(image);
-
-previewButton.addEventListener('click', () => {
-  // Store the selected photo's capture session.
-  // All photos taken in the same capture will have this same session ID.
-  const selectedSessionId = photo.captureSessionId || null;
-
+        previewButton.className = 'photo-preview';
+        previewButton.type = 'button';
+        previewButton.setAttribute('aria-label', `Preview photo from ${formatPhotoDate(photo.capturedAt)}`);
+        const image = document.createElement('img');
+        image.src = photo.data;
+        image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
+        previewButton.appendChild(image);
+        previewButton.addEventListener('click', () => {
+  // Store the selected photo AND its capture session.
+  // All photos taken in the same 3-photo capture
+  // have the same captureSessionId.
   sessionStorage.setItem(
     'lumabooth_selected_share_photo',
     JSON.stringify({
       id: photo.id,
       data: photo.data,
-      captureSessionId: selectedSessionId,
+      captureSessionId: photo.captureSessionId || null,
       cameraNumber: photo.cameraNumber || 1
     })
   );
 
-  // Keep the currently selected template if your page already uses this.
-  if (typeof selectedTemplate !== 'undefined' && selectedTemplate) {
-    sessionStorage.setItem(
-      'lumabooth_selected_share_template',
-      selectedTemplate
-    );
-  }
+  // IMPORTANT:
+  // Clear the previous final rendered photo.
+  // Otherwise share.html may reuse the old result.
+  sessionStorage.removeItem(
+    'lumabooth_final_photo_result_v1'
+  );
+
+  sessionStorage.removeItem(
+    'lumabooth_cloud_upload_error_v1'
+  );
+
+  sessionStorage.removeItem(
+    'lumabooth_cloud_upload_failures_v1'
+  );
 
   window.location.href = 'share.html';
 });
 
-const info = document.createElement('div');
-info.className = 'photo-info';
+        const info = document.createElement('div');
+        info.className = 'photo-info';
         const date = document.createElement('div');
         date.className = 'photo-date';
         date.textContent = formatPhotoDate(photo.capturedAt);

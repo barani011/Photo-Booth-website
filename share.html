@@ -307,6 +307,60 @@
       });
     }
 
+    async function loadAllPhotoRecords() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => {
+          reject(request.error || new Error('Photo database could not be opened.'));
+        };
+
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('templates')) {
+            db.createObjectStore('templates', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('design_drafts')) {
+            db.createObjectStore('design_drafts', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(PHOTO_ASSET_STORE)) {
+            db.createObjectStore(PHOTO_ASSET_STORE, { keyPath: 'id' });
+          }
+        };
+
+        request.onsuccess = () => {
+          const db = request.result;
+
+          try {
+            if (!db.objectStoreNames.contains(PHOTO_ASSET_STORE)) {
+              db.close();
+              reject(new Error(`IndexedDB store "${PHOTO_ASSET_STORE}" was not found.`));
+              return;
+            }
+
+            const transaction = db.transaction(PHOTO_ASSET_STORE, 'readonly');
+            const store = transaction.objectStore(PHOTO_ASSET_STORE);
+            const getAllRequest = store.getAll();
+
+            getAllRequest.onsuccess = () => {
+              const records = getAllRequest.result || [];
+              db.close();
+              resolve(records);
+            };
+
+            getAllRequest.onerror = () => {
+              const error = getAllRequest.error || new Error('Photos could not be loaded.');
+              db.close();
+              reject(error);
+            };
+          } catch (error) {
+            db.close();
+            reject(error);
+          }
+        };
+      });
+    }
+
     async function loadShareData() {
   let savedPhoto = null;
   const photosByCamera = new Map();
@@ -327,11 +381,11 @@
       try {
         selectedGalleryPhoto = JSON.parse(selectedRaw);
       } catch (e) {
-        // Backward compatibility if old code stored only image data
+        // Old format compatibility
         selectedGalleryPhoto = {
           data: selectedRaw,
-          cameraNumber: 1,
-          captureSessionId: null
+          captureSessionId: null,
+          cameraNumber: 1
         };
       }
     }
@@ -341,67 +395,29 @@
 
 
   // ============================================================
-  // 2. IF GALLERY PHOTO WAS SELECTED,
+  // 2. IF GALLERY PHOTO WAS SELECTED
   //    LOAD ALL PHOTOS FROM THE SAME CAPTURE SESSION
   // ============================================================
 
-  if (selectedGalleryPhoto?.captureSessionId) {
+  if (
+    selectedGalleryPhoto &&
+    selectedGalleryPhoto.captureSessionId
+  ) {
 
     try {
-      const allPhotoRecords = await new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = () => {
-          reject(request.error || new Error('Database could not be opened.'));
-        };
+      const allPhotos = await loadAllPhotoRecords();
 
-        request.onsuccess = () => {
-          const db = request.result;
+      const selectedSessionId =
+        selectedGalleryPhoto.captureSessionId;
 
-          try {
-            const transaction = db.transaction(
-              PHOTO_ASSET_STORE,
-              'readonly'
-            );
-
-            const store = transaction.objectStore(
-              PHOTO_ASSET_STORE
-            );
-
-            const getAllRequest = store.getAll();
-
-            getAllRequest.onsuccess = () => {
-              resolve(getAllRequest.result || []);
-              db.close();
-            };
-
-            getAllRequest.onerror = () => {
-              reject(
-                getAllRequest.error ||
-                new Error('Photos could not be loaded.')
-              );
-
-              db.close();
-            };
-
-          } catch (error) {
-            db.close();
-            reject(error);
-          }
-        };
-
-        request.onupgradeneeded = () => {
-          // Do nothing here.
-        };
-      });
-
-      // Find every photo from the same capture session
-      const sessionPhotos = allPhotoRecords
+      // Get every photo belonging to the same capture
+      const sessionPhotos = allPhotos
         .filter(photo =>
-          photo.id !== LATEST_PHOTO_ID &&
+          photo.id !== CAPTURED_PHOTO_ID &&
+          photo.id !== 'last-captured-photo' &&
           photo.data &&
-          photo.captureSessionId ===
-            selectedGalleryPhoto.captureSessionId
+          photo.captureSessionId === selectedSessionId
         )
         .sort((a, b) =>
           Number(a.cameraNumber || 0) -
@@ -409,48 +425,63 @@
         );
 
 
-      // Put every photo into the correct camera slot
+      console.log(
+        'Selected capture session:',
+        selectedSessionId
+      );
+
+      console.log(
+        'Photos found in session:',
+        sessionPhotos
+      );
+
+
+      // Put every photo into its correct camera slot
       sessionPhotos.forEach(photo => {
 
-        const cameraNumber = String(
-          photo.cameraNumber || 1
-        );
+        const cameraNumber =
+          String(photo.cameraNumber || 1);
 
         photosByCamera.set(
           cameraNumber,
           photo.data
         );
+
       });
 
 
-      // Selected photo is still used as fallback
-      savedPhoto = selectedGalleryPhoto.data || null;
+      // Selected photo as fallback
+      savedPhoto =
+        selectedGalleryPhoto.data || null;
+
 
     } catch (error) {
-      console.warn(
-        'Could not load all photos from selected session:',
+
+      console.error(
+        'Could not load photos from selected capture session:',
         error
       );
+
     }
   }
 
 
   // ============================================================
-  // 3. FALLBACK FOR OLD GALLERY SELECTION
+  // 3. OLD GALLERY SELECTION FALLBACK
   // ============================================================
 
   if (
     selectedGalleryPhoto?.data &&
     photosByCamera.size === 0
   ) {
-    savedPhoto = selectedGalleryPhoto.data;
 
-    const cameraNumber = String(
-      selectedGalleryPhoto.cameraNumber || 1
-    );
+    savedPhoto =
+      selectedGalleryPhoto.data;
 
     photosByCamera.set(
-      cameraNumber,
+      String(
+        selectedGalleryPhoto.cameraNumber || 1
+      ),
       selectedGalleryPhoto.data
     );
   }
@@ -461,9 +492,12 @@
   //    Used when coming directly from capture.html
   // ============================================================
 
-  if (!selectedGalleryPhoto?.captureSessionId) {
+  if (
+    !selectedGalleryPhoto?.captureSessionId
+  ) {
 
     try {
+
       const photoIds = JSON.parse(
         sessionStorage.getItem(
           CAPTURE_PHOTO_IDS_KEY
@@ -487,18 +521,21 @@
             ),
             photoRecord.data
           );
+
         }
       }
 
     } catch (e) {
+
       console.warn(
-        'Could not load captured photos:',
+        'Could not load capture photos:',
         e
       );
+
     }
 
 
-    // Load latest photo only if needed
+    // Latest captured photo fallback
     if (photosByCamera.size === 0) {
 
       try {
@@ -524,6 +561,7 @@
 
           savedPhoto =
             photoRecord?.data || null;
+
         }
 
       } catch (e) {}
@@ -534,17 +572,20 @@
     if (!savedPhoto) {
 
       try {
+
         savedPhoto =
           sessionStorage.getItem(
             'lastCapturedPhoto'
           );
+
       } catch (e) {}
+
     }
   }
 
 
   // ============================================================
-  // 5. LOAD CURRENT SELECTED TEMPLATE
+  // 5. LOAD ACTIVE TEMPLATE
   // ============================================================
 
   try {
@@ -553,19 +594,27 @@
       localStorage.getItem(ACTIVE_KEY);
 
     if (activeRaw) {
-      template = JSON.parse(activeRaw);
+
+      template =
+        JSON.parse(activeRaw);
+
     }
 
   } catch (e) {}
 
 
-  // Try active template ID
+  // ============================================================
+  // 6. LOAD TEMPLATE FROM INDEXEDDB
+  // ============================================================
+
   if (!template) {
 
     try {
 
       const activeId =
-        localStorage.getItem(ACTIVE_ID_KEY);
+        localStorage.getItem(
+          ACTIVE_ID_KEY
+        );
 
       if (activeId) {
 
@@ -574,19 +623,25 @@
             'templates',
             activeId
           );
+
       }
 
     } catch (e) {}
   }
 
 
-  // Try saved templates
+  // ============================================================
+  // 7. FALLBACK TO SAVED TEMPLATE
+  // ============================================================
+
   if (!template) {
 
     try {
 
       const listRaw =
-        localStorage.getItem(STORAGE_KEY);
+        localStorage.getItem(
+          STORAGE_KEY
+        );
 
       if (listRaw) {
 
@@ -595,6 +650,7 @@
 
         template =
           templates[0] || null;
+
       }
 
     } catch (e) {}
@@ -602,7 +658,7 @@
 
 
   // ============================================================
-  // 6. FINAL FALLBACK
+  // 8. FINAL FALLBACK PHOTO
   // ============================================================
 
   if (
@@ -614,11 +670,12 @@
       '1',
       savedPhoto
     );
+
   }
 
 
   // ============================================================
-  // 7. SHOW FIRST PHOTO IN THE SMALL PREVIEW
+  // 9. PREVIEW IMAGE
   // ============================================================
 
   const previewPhoto =
@@ -627,19 +684,38 @@
 
   if (previewPhoto) {
 
-    const previewImage =
+    const preview =
       document.getElementById(
         'polaroid-preview-img'
       );
 
-    if (previewImage) {
-      previewImage.src = previewPhoto;
+    if (preview) {
+
+      preview.src =
+        previewPhoto;
+
     }
+
   }
 
 
   // ============================================================
-  // 8. RENDER COMPLETE TEMPLATE
+  // 10. DEBUG
+  // ============================================================
+
+  console.log(
+    'Photos by camera:',
+    Object.fromEntries(photosByCamera)
+  );
+
+  console.log(
+    'Template:',
+    template
+  );
+
+
+  // ============================================================
+  // 11. RENDER COMPLETE TEMPLATE
   // ============================================================
 
   renderExactTemplate(
@@ -649,7 +725,7 @@
 
 
   // ============================================================
-  // 9. SAVE FINAL COMBINED PHOTO
+  // 12. SAVE FINAL COMBINED PHOTO
   // ============================================================
 
   if (template) {
@@ -658,6 +734,7 @@
       template,
       photosByCamera
     );
+
   }
 }
 
