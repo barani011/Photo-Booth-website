@@ -312,9 +312,10 @@
   const photosByCamera = new Map();
   let template = null;
 
-  // =====================================================
-  // FIRST: CHECK IF USER SELECTED A PHOTO FROM GALLERY
-  // =====================================================
+  // ============================================================
+  // 1. CHECK IF A PHOTO WAS SELECTED FROM GALLERY
+  // ============================================================
+
   let selectedGalleryPhoto = null;
 
   try {
@@ -326,10 +327,11 @@
       try {
         selectedGalleryPhoto = JSON.parse(selectedRaw);
       } catch (e) {
-        // Support old format where only image data was stored
+        // Backward compatibility if old code stored only image data
         selectedGalleryPhoto = {
           data: selectedRaw,
-          cameraNumber: 1
+          cameraNumber: 1,
+          captureSessionId: null
         };
       }
     }
@@ -337,132 +339,325 @@
     selectedGalleryPhoto = null;
   }
 
-  // =====================================================
-  // IF GALLERY PHOTO WAS SELECTED
-  // USE THAT PHOTO - NOT THE LATEST PHOTO
-  // =====================================================
-  if (selectedGalleryPhoto?.data) {
-    savedPhoto = selectedGalleryPhoto.data;
 
-    const cameraNumber =
-      String(selectedGalleryPhoto.cameraNumber || 1);
+  // ============================================================
+  // 2. IF GALLERY PHOTO WAS SELECTED,
+  //    LOAD ALL PHOTOS FROM THE SAME CAPTURE SESSION
+  // ============================================================
 
-    photosByCamera.set(cameraNumber, selectedGalleryPhoto.data);
+  if (selectedGalleryPhoto?.captureSessionId) {
+
+    try {
+      const allPhotoRecords = await new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => {
+          reject(request.error || new Error('Database could not be opened.'));
+        };
+
+        request.onsuccess = () => {
+          const db = request.result;
+
+          try {
+            const transaction = db.transaction(
+              PHOTO_ASSET_STORE,
+              'readonly'
+            );
+
+            const store = transaction.objectStore(
+              PHOTO_ASSET_STORE
+            );
+
+            const getAllRequest = store.getAll();
+
+            getAllRequest.onsuccess = () => {
+              resolve(getAllRequest.result || []);
+              db.close();
+            };
+
+            getAllRequest.onerror = () => {
+              reject(
+                getAllRequest.error ||
+                new Error('Photos could not be loaded.')
+              );
+
+              db.close();
+            };
+
+          } catch (error) {
+            db.close();
+            reject(error);
+          }
+        };
+
+        request.onupgradeneeded = () => {
+          // Do nothing here.
+        };
+      });
+
+      // Find every photo from the same capture session
+      const sessionPhotos = allPhotoRecords
+        .filter(photo =>
+          photo.id !== LATEST_PHOTO_ID &&
+          photo.data &&
+          photo.captureSessionId ===
+            selectedGalleryPhoto.captureSessionId
+        )
+        .sort((a, b) =>
+          Number(a.cameraNumber || 0) -
+          Number(b.cameraNumber || 0)
+        );
+
+
+      // Put every photo into the correct camera slot
+      sessionPhotos.forEach(photo => {
+
+        const cameraNumber = String(
+          photo.cameraNumber || 1
+        );
+
+        photosByCamera.set(
+          cameraNumber,
+          photo.data
+        );
+      });
+
+
+      // Selected photo is still used as fallback
+      savedPhoto = selectedGalleryPhoto.data || null;
+
+    } catch (error) {
+      console.warn(
+        'Could not load all photos from selected session:',
+        error
+      );
+    }
   }
 
-  // =====================================================
-  // NORMAL CAPTURE FLOW
-  // Only use capture-session photos when coming directly
-  // from capture.html
-  // =====================================================
-  if (!selectedGalleryPhoto?.data) {
+
+  // ============================================================
+  // 3. FALLBACK FOR OLD GALLERY SELECTION
+  // ============================================================
+
+  if (
+    selectedGalleryPhoto?.data &&
+    photosByCamera.size === 0
+  ) {
+    savedPhoto = selectedGalleryPhoto.data;
+
+    const cameraNumber = String(
+      selectedGalleryPhoto.cameraNumber || 1
+    );
+
+    photosByCamera.set(
+      cameraNumber,
+      selectedGalleryPhoto.data
+    );
+  }
+
+
+  // ============================================================
+  // 4. NORMAL CAPTURE FLOW
+  //    Used when coming directly from capture.html
+  // ============================================================
+
+  if (!selectedGalleryPhoto?.captureSessionId) {
+
     try {
       const photoIds = JSON.parse(
-        sessionStorage.getItem(CAPTURE_PHOTO_IDS_KEY) || '[]'
+        sessionStorage.getItem(
+          CAPTURE_PHOTO_IDS_KEY
+        ) || '[]'
       );
 
       for (const photoId of photoIds) {
-        const photoRecord = await loadDatabaseRecord(
-          PHOTO_ASSET_STORE,
-          photoId
-        );
+
+        const photoRecord =
+          await loadDatabaseRecord(
+            PHOTO_ASSET_STORE,
+            photoId
+          );
 
         if (photoRecord?.data) {
+
           photosByCamera.set(
-            String(photoRecord.cameraNumber || photosByCamera.size + 1),
+            String(
+              photoRecord.cameraNumber ||
+              photosByCamera.size + 1
+            ),
             photoRecord.data
           );
         }
       }
-    } catch(e) {}
-  }
 
-  // =====================================================
-  // ONLY LOAD LAST CAPTURED PHOTO IF NO GALLERY PHOTO
-  // WAS SELECTED
-  // =====================================================
-  if (!selectedGalleryPhoto?.data) {
-    try {
-      const photoRecord = await loadDatabaseRecord(
-        PHOTO_ASSET_STORE,
-        CAPTURED_PHOTO_ID
+    } catch (e) {
+      console.warn(
+        'Could not load captured photos:',
+        e
       );
+    }
 
-      if (photoRecord?.galleryRecordId) {
-        const latestPhoto = await loadDatabaseRecord(
-          PHOTO_ASSET_STORE,
-          photoRecord.galleryRecordId
-        );
 
-        savedPhoto = latestPhoto?.data || null;
-      } else {
-        savedPhoto = photoRecord?.data || null;
-      }
-    } catch(e) {}
+    // Load latest photo only if needed
+    if (photosByCamera.size === 0) {
+
+      try {
+
+        const photoRecord =
+          await loadDatabaseRecord(
+            PHOTO_ASSET_STORE,
+            CAPTURED_PHOTO_ID
+          );
+
+        if (photoRecord?.galleryRecordId) {
+
+          const latestPhoto =
+            await loadDatabaseRecord(
+              PHOTO_ASSET_STORE,
+              photoRecord.galleryRecordId
+            );
+
+          savedPhoto =
+            latestPhoto?.data || null;
+
+        } else {
+
+          savedPhoto =
+            photoRecord?.data || null;
+        }
+
+      } catch (e) {}
+    }
+
+
+    // Old fallback
+    if (!savedPhoto) {
+
+      try {
+        savedPhoto =
+          sessionStorage.getItem(
+            'lastCapturedPhoto'
+          );
+      } catch (e) {}
+    }
   }
 
-  if (!savedPhoto && !selectedGalleryPhoto?.data) {
-    try {
-      savedPhoto = sessionStorage.getItem('lastCapturedPhoto');
-    } catch(e) {}
-  }
 
-  // =====================================================
-  // LOAD THE CURRENT SELECTED TEMPLATE
-  // =====================================================
+  // ============================================================
+  // 5. LOAD CURRENT SELECTED TEMPLATE
+  // ============================================================
+
   try {
-    const activeRaw = localStorage.getItem(ACTIVE_KEY);
+
+    const activeRaw =
+      localStorage.getItem(ACTIVE_KEY);
 
     if (activeRaw) {
       template = JSON.parse(activeRaw);
     }
-  } catch(e) {}
 
+  } catch (e) {}
+
+
+  // Try active template ID
   if (!template) {
+
     try {
-      const activeId = localStorage.getItem(ACTIVE_ID_KEY);
+
+      const activeId =
+        localStorage.getItem(ACTIVE_ID_KEY);
 
       if (activeId) {
-        template = await loadDatabaseRecord(
-          'templates',
-          activeId
-        );
+
+        template =
+          await loadDatabaseRecord(
+            'templates',
+            activeId
+          );
       }
-    } catch(e) {}
+
+    } catch (e) {}
   }
 
-  // Fallback to first saved template
+
+  // Try saved templates
   if (!template) {
+
     try {
-      const listRaw = localStorage.getItem(STORAGE_KEY);
+
+      const listRaw =
+        localStorage.getItem(STORAGE_KEY);
 
       if (listRaw) {
-        template = JSON.parse(listRaw)[0] || null;
+
+        const templates =
+          JSON.parse(listRaw);
+
+        template =
+          templates[0] || null;
       }
-    } catch(e) {}
+
+    } catch (e) {}
   }
 
-  // =====================================================
-  // FINAL FALLBACK
-  // =====================================================
-  if (savedPhoto && photosByCamera.size === 0) {
-    photosByCamera.set('1', savedPhoto);
+
+  // ============================================================
+  // 6. FINAL FALLBACK
+  // ============================================================
+
+  if (
+    savedPhoto &&
+    photosByCamera.size === 0
+  ) {
+
+    photosByCamera.set(
+      '1',
+      savedPhoto
+    );
   }
+
+
+  // ============================================================
+  // 7. SHOW FIRST PHOTO IN THE SMALL PREVIEW
+  // ============================================================
 
   const previewPhoto =
-    photosByCamera.values().next().value || savedPhoto;
+    photosByCamera.values().next().value ||
+    savedPhoto;
 
   if (previewPhoto) {
-    document.getElementById(
-      'polaroid-preview-img'
-    ).src = previewPhoto;
+
+    const previewImage =
+      document.getElementById(
+        'polaroid-preview-img'
+      );
+
+    if (previewImage) {
+      previewImage.src = previewPhoto;
+    }
   }
 
-  // Render selected template with selected gallery photo
-  renderExactTemplate(template, photosByCamera);
+
+  // ============================================================
+  // 8. RENDER COMPLETE TEMPLATE
+  // ============================================================
+
+  renderExactTemplate(
+    template,
+    photosByCamera
+  );
+
+
+  // ============================================================
+  // 9. SAVE FINAL COMBINED PHOTO
+  // ============================================================
 
   if (template) {
-    await saveFinalPhoto(template, photosByCamera);
+
+    await saveFinalPhoto(
+      template,
+      photosByCamera
+    );
   }
 }
 

@@ -296,14 +296,27 @@ image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
 previewButton.appendChild(image);
 
 previewButton.addEventListener('click', () => {
+  // Store the selected photo's capture session.
+  // All photos taken in the same capture will have this same session ID.
+  const selectedSessionId = photo.captureSessionId || null;
+
   sessionStorage.setItem(
     'lumabooth_selected_share_photo',
     JSON.stringify({
       id: photo.id,
       data: photo.data,
+      captureSessionId: selectedSessionId,
       cameraNumber: photo.cameraNumber || 1
     })
   );
+
+  // Keep the currently selected template if your page already uses this.
+  if (typeof selectedTemplate !== 'undefined' && selectedTemplate) {
+    sessionStorage.setItem(
+      'lumabooth_selected_share_template',
+      selectedTemplate
+    );
+  }
 
   window.location.href = 'share.html';
 });
