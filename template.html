@@ -74,7 +74,7 @@
   <!-- Carousel populated live from Database -->
   <div class="relative w-full max-w-[1300px] flex items-center justify-center my-auto">
     <div id="kiosk-templates-carousel" class="no-scrollbar flex items-center gap-6 overflow-x-auto py-5 px-6 scroll-smooth w-full">
-      <!-- Templates loaded dynamically from localStorage -->
+      <!-- Templates loaded dynamically from IndexedDB / localStorage -->
     </div>
 
     <!-- Right Scroll Arrow Button -->
@@ -142,6 +142,27 @@
       });
     }
 
+    function deleteTemplateFromDatabase(templateId) {
+      return new Promise((resolve) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction(STORE_TEMPLATES, 'readwrite');
+          const store = transaction.objectStore(STORE_TEMPLATES);
+          store.delete(templateId);
+          transaction.oncomplete = () => {
+            db.close();
+            resolve(true);
+          };
+          transaction.onerror = () => {
+            db.close();
+            resolve(false);
+          };
+        };
+        request.onerror = () => resolve(false);
+      });
+    }
+
     async function loadTemplates() {
       try {
         savedTemplates = await loadTemplatesFromDatabase();
@@ -171,6 +192,40 @@
       renderCarousel();
     }
 
+    async function deleteTemplate(e, templateId) {
+      e.stopPropagation();
+
+      const confirmed = window.confirm("Are you sure you want to delete this template?");
+      if (!confirmed) return;
+
+      // 1. Delete from IndexedDB
+      await deleteTemplateFromDatabase(templateId);
+
+      // 2. Remove from local array
+      savedTemplates = savedTemplates.filter(tpl => tpl.id !== templateId);
+
+      // 3. Update localStorage fallback
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedTemplates));
+      } catch(err) {}
+
+      // 4. Update active template if the deleted one was selected
+      if (selectedTemplate && selectedTemplate.id === templateId) {
+        selectedTemplate = savedTemplates[0] || null;
+        try {
+          if (selectedTemplate) {
+            localStorage.setItem(ACTIVE_KEY, JSON.stringify(selectedTemplate));
+            localStorage.setItem(ACTIVE_ID_KEY, selectedTemplate.id);
+          } else {
+            localStorage.removeItem(ACTIVE_KEY);
+            localStorage.removeItem(ACTIVE_ID_KEY);
+          }
+        } catch(err) {}
+      }
+
+      renderCarousel();
+    }
+
     function renderCarousel() {
       const carousel = document.getElementById('kiosk-templates-carousel');
       carousel.innerHTML = '';
@@ -188,16 +243,27 @@
         const card = document.createElement('div');
         const isSelected = selectedTemplate && selectedTemplate.id === tpl.id;
 
-        card.className = `relative flex-shrink-0 w-[185px] h-[340px] rounded-2xl cursor-pointer transition-all duration-200 bg-white p-2.5 overflow-hidden flex flex-col justify-between shadow-2xl ${
+        card.className = `group/card relative flex-shrink-0 w-[185px] h-[340px] rounded-2xl cursor-pointer transition-all duration-200 bg-white p-2.5 overflow-hidden flex flex-col justify-between shadow-2xl ${
           isSelected ? 'ring-4 ring-[#d82b6b] scale-[1.02]' : 'hover:scale-[1.01] opacity-90 hover:opacity-100'
         }`;
 
         card.innerHTML = `
+          <!-- Delete Button (Top-Right) -->
+          <button 
+            type="button"
+            onclick="deleteTemplate(event, '${tpl.id}')"
+            title="Delete Template"
+            class="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg transition-all duration-150 z-20 opacity-80 hover:opacity-100 hover:scale-110 active:scale-95"
+          >
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+
+          <!-- Template Thumbnail Preview -->
           <div class="w-full h-full rounded-xl overflow-hidden flex items-center justify-center bg-gray-50">
-            <img src="${tpl.thumbnailDataUri || ''}" alt="${tpl.title}" class="w-full h-full object-contain pointer-events-none">
+            <img src="${tpl.thumbnailDataUri || ''}" alt="${tpl.title || 'Template'}" class="w-full h-full object-contain pointer-events-none">
           </div>
 
-          <!-- Selection Badge -->
+          <!-- Selection Checkmark Badge (Bottom-Right) -->
           <div class="absolute bottom-3 right-3 w-7 h-7 rounded-full bg-[#d82b6b] text-white items-center justify-center shadow-md ${
             isSelected ? 'flex' : 'hidden'
           }">
