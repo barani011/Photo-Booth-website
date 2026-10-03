@@ -754,7 +754,19 @@
   }
 }
 
-    window.addEventListener('DOMContentLoaded', loadShareData);
+    // Keep the complete share-page loading/saving process available to
+    // buttons that may be clicked before it finishes.
+    let sharePageReadyPromise = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      sharePageReadyPromise = loadShareData().catch(error => {
+        console.error('Share page initialization failed:', error);
+        const status = document.getElementById('final-photo-status');
+        if (status) {
+          status.textContent = `Photo setup failed: ${error.message || error}`;
+        }
+      });
+    });
 
     function renderExactTemplate(tpl, photosByCamera) {
       const container = document.getElementById('dynamic-rendered-strip');
@@ -1384,18 +1396,75 @@ async function printPhotoCopies(quantity) {
       }
     }
 
-    function shareAction(method) {
+    async function shareAction(method) {
       if (method === 'Email') {
         const email = prompt("Enter your email address to receive your photo:");
         if (email) alert(`Photo sent to ${email}!`);
-      } else if (method === 'SMS') {
+        return;
+      }
+
+      if (method === 'SMS') {
         const phone = prompt("Enter your phone number:");
         if (phone) alert(`Photo sent to ${phone}!`);
-      } else if (method === 'QR Code') {
+        return;
+      }
+
+      if (method === 'QR Code') {
+        const status = document.getElementById('final-photo-status');
+
+        // The page may still be rendering/saving the final photo when
+        // the user presses Scan QR. Wait for that process to finish.
+        if (sharePageReadyPromise) {
+          try {
+            await sharePageReadyPromise;
+          } catch (error) {
+            console.error('Waiting for final photo failed:', error);
+          }
+        }
+
+        // Recover the saved result if the variable was not populated yet.
         if (!savedFinalPhoto) {
-          alert('The final photo is not saved yet.');
+          try {
+            const storedResult = JSON.parse(
+              sessionStorage.getItem(FINAL_PHOTO_RESULT_KEY) || 'null'
+            );
+
+            if (storedResult) {
+              await showSavedPhotoResult(storedResult);
+            }
+          } catch (error) {
+            console.error('Could not recover saved photo result:', error);
+          }
+        }
+
+        if (!savedFinalPhoto) {
+          const currentStatus = status?.textContent || '';
+
+          alert(
+            currentStatus &&
+            !currentStatus.includes('Preparing final photo')
+              ? currentStatus
+              : 'The final photo is still being saved. Please wait a moment and try Scan QR again.'
+          );
           return;
         }
+
+        // Make sure the QR itself has been generated before opening.
+        const qrImage = document.getElementById('qr-code-image');
+
+        if (!qrImage?.src) {
+          try {
+            await showSavedPhotoResult(savedFinalPhoto);
+          } catch (error) {
+            console.error('Could not generate QR code:', error);
+          }
+        }
+
+        if (!qrImage?.src) {
+          alert('QR code could not be generated. Please check the Supabase public photo URL.');
+          return;
+        }
+
         document.getElementById('qr-download-dialog').showModal();
       }
     }
