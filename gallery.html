@@ -1,1076 +1,408 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LumaBooth - Photo Gallery</title>
-
   <style>
-
     :root {
       color-scheme: dark;
-
       --page: #171618;
       --panel: #222125;
       --line: #38363d;
       --muted: #aaa7af;
-
       --pink: #d82b6b;
       --pink-hover: #bf205b;
     }
 
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
 
     body {
-
       min-height: 100vh;
-
       margin: 0;
-
       background: var(--page);
-
       color: #f3f1f5;
-
-      font-family:
-        Inter,
-        "Segoe UI",
-        sans-serif;
-
+      font-family: Inter, "Segoe UI", sans-serif;
     }
 
-
-    button,
-    a {
-      font: inherit;
-    }
-
+    button, a { font: inherit; }
 
     .titlebar {
-
       height: 40px;
-
       display: flex;
-
       align-items: center;
-
       gap: 10px;
-
       padding: 0 18px;
-
-      border-bottom:
-        1px solid #29272c;
-
+      border-bottom: 1px solid #29272c;
       background: #121113;
-
       color: #d7d4da;
-
       font-size: 13px;
-
     }
-
 
     .brand-mark {
-
       display: grid;
-
       width: 22px;
       height: 22px;
-
       place-items: center;
-
       border-radius: 5px;
-
       background: var(--pink);
-
       color: #fff;
-
       font-size: 12px;
-
       font-weight: 700;
-
     }
-
 
     main {
-
-      width:
-        min(1480px, 100%);
-
+      width: min(1480px, 100%);
       margin: 0 auto;
-
-      padding:
-        34px
-        clamp(18px, 4vw, 56px)
-        56px;
-
+      padding: 34px clamp(18px, 4vw, 56px) 56px;
     }
-
 
     .toolbar {
-
       display: flex;
-
       align-items: center;
-
       justify-content: space-between;
-
       gap: 20px;
-
       margin-bottom: 26px;
-
     }
-
 
     .heading-row {
-
       display: flex;
-
       align-items: baseline;
-
       gap: 14px;
-
     }
 
+    h1 { margin: 0; font-size: 24px; font-weight: 650; }
 
-    h1 {
+    #photo-count { color: var(--muted); font-size: 13px; }
 
-      margin: 0;
-
-      font-size: 24px;
-
-      font-weight: 650;
-
-    }
-
-
-    #photo-count {
-
-      color: var(--muted);
-
-      font-size: 13px;
-
-    }
-
-
-    .toolbar-actions {
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 10px;
-
-    }
-
+    .toolbar-actions { display: flex; align-items: center; gap: 10px; }
 
     .toolbar-button {
-
       min-height: 38px;
-
       padding: 0 14px;
-
-      border:
-        1px solid #4b4850;
-
+      border: 1px solid #4b4850;
       border-radius: 6px;
-
       background: #27252a;
-
       color: #f3f1f5;
-
       cursor: pointer;
-
       text-decoration: none;
-
     }
 
-
-    .toolbar-button:hover {
-
-      background: #343137;
-
-    }
-
+    .toolbar-button:hover { background: #343137; }
 
     .toolbar-button.primary {
-
       border-color: var(--pink);
-
       background: var(--pink);
-
     }
 
-
-    .toolbar-button.primary:hover {
-
-      background: var(--pink-hover);
-
-    }
-
+    .toolbar-button.primary:hover { background: var(--pink-hover); }
 
     .photo-grid {
-
       display: grid;
-
-      grid-template-columns:
-        repeat(
-          auto-fill,
-          minmax(210px, 1fr)
-        );
-
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
       gap: 18px;
-
     }
-
 
     .photo-card {
-
       min-width: 0;
-
       overflow: hidden;
-
-      border:
-        1px solid var(--line);
-
+      border: 1px solid var(--line);
       border-radius: 7px;
-
       background: var(--panel);
-
     }
-
 
     .photo-preview {
-
       display: block;
-
       width: 100%;
-
       aspect-ratio: 4 / 3;
-
       padding: 0;
-
       overflow: hidden;
-
       border: 0;
-
       background: #101012;
-
       cursor: zoom-in;
-
     }
-
 
     .photo-preview img {
-
       display: block;
-
       width: 100%;
-
       height: 100%;
-
       object-fit: cover;
-
     }
 
-
-    .photo-info {
-
-      padding: 12px;
-
-    }
-
+    .photo-info { padding: 12px; }
 
     .photo-date {
-
       overflow: hidden;
-
       color: #e4e1e7;
-
       font-size: 12px;
-
       text-overflow: ellipsis;
-
       white-space: nowrap;
-
     }
 
+    .photo-actions { display: flex; gap: 8px; margin-top: 10px; }
 
-    .photo-actions {
-
-      display: flex;
-
-      gap: 8px;
-
-      margin-top: 10px;
-
-    }
-
-
-    .photo-actions a {
-
+    .photo-actions button, .photo-actions a {
       display: inline-flex;
-
       min-height: 32px;
-
       align-items: center;
-
       justify-content: center;
-
       padding: 0 10px;
-
-      border:
-        1px solid #4b4850;
-
+      border: 1px solid #4b4850;
       border-radius: 5px;
-
       background: transparent;
-
       color: #eeeaf1;
-
       font-size: 12px;
-
       text-decoration: none;
-
       cursor: pointer;
-
     }
 
-
-    .photo-actions a:hover {
-
-      background: #343137;
-
-    }
-
+    .photo-actions button:hover, .photo-actions a:hover { background: #343137; }
+    .photo-actions .delete-photo { margin-left: auto; color: #ff9ab9; }
 
     .empty-state {
-
       display: grid;
-
       min-height: 280px;
-
       place-content: center;
-
       gap: 12px;
-
-      border:
-        1px dashed #48454d;
-
+      border: 1px dashed #48454d;
       border-radius: 8px;
-
       color: var(--muted);
-
       text-align: center;
-
     }
 
-
-    .empty-state strong {
-
-      color: #f3f1f5;
-
-      font-size: 17px;
-
-    }
-
-
-    .empty-state[hidden] {
-
-      display: none;
-
-    }
-
+    .empty-state strong { color: #f3f1f5; font-size: 17px; }
+    .empty-state[hidden] { display: none; }
 
     dialog {
-
-      width:
-        min(94vw, 1100px);
-
+      width: min(94vw, 1100px);
       max-width: none;
-
       max-height: 92vh;
-
       padding: 12px;
-
-      border:
-        1px solid #4b4850;
-
+      border: 1px solid #4b4850;
       border-radius: 8px;
-
       background: #171618;
-
     }
 
-
-    dialog::backdrop {
-
-      background:
-        rgba(0, 0, 0, 0.82);
-
-    }
-
+    dialog::backdrop { background: rgba(0, 0, 0, 0.82); }
 
     dialog img {
-
       display: block;
-
       max-width: 100%;
-
-      max-height:
-        calc(92vh - 24px);
-
+      max-height: calc(92vh - 24px);
       margin: 0 auto;
-
       object-fit: contain;
-
     }
-
 
     @media (max-width: 600px) {
-
-      .toolbar {
-
-        align-items: flex-start;
-
-        flex-direction: column;
-
-      }
-
-
-      .toolbar-actions {
-
-        width: 100%;
-
-      }
-
-
-      .toolbar-button {
-
-        flex: 1;
-
-        text-align: center;
-
-      }
-
-
-      .photo-grid {
-
-        grid-template-columns:
-          repeat(
-            2,
-            minmax(0, 1fr)
-          );
-
-        gap: 10px;
-
-      }
-
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .toolbar-actions { width: 100%; }
+      .toolbar-button { flex: 1; text-align: center; }
+      .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .photo-actions { flex-wrap: wrap; }
     }
-
   </style>
-
-
-  <link
-    rel="manifest"
-    href="/manifest.json"
-  >
-
-  <meta
-    name="mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="theme-color"
-    content="#000000"
-  >
-
-  <link
-    rel="stylesheet"
-    href="/responsive.css"
-  >
-
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="/responsive.css">
 </head>
-
-
 <body>
-
   <header class="titlebar">
-
-    <span
-      class="brand-mark"
-      aria-hidden="true"
-    >
-      LB
-    </span>
-
-    <span>
-      LumaBooth - Photo Gallery
-    </span>
-
+    <span class="brand-mark" aria-hidden="true">LB</span>
+    <span>LumaBooth - Photo Gallery</span>
   </header>
 
-
   <main>
-
     <div class="toolbar">
-
       <div class="heading-row">
-
-        <h1>
-          Photo Gallery
-        </h1>
-
-        <span
-          id="photo-count"
-          role="status"
-          aria-live="polite"
-        >
-          Loading photos...
-        </span>
-
+        <h1>Photo Gallery</h1>
+        <span id="photo-count" role="status" aria-live="polite">Loading photos...</span>
       </div>
-
-
       <div class="toolbar-actions">
-
-        <button
-          class="toolbar-button"
-          type="button"
-          onclick="goBackToBooth()"
-        >
-          Back
-        </button>
-
-        <a
-          class="toolbar-button primary"
-          href="share.html"
-        >
-          Done
-        </a>
-
+        <button class="toolbar-button" type="button" onclick="goBackToBooth()">Back</button>
+        <a class="toolbar-button primary" href="share.html">Done</a>
       </div>
-
     </div>
 
-
-    <div
-      id="photo-grid"
-      class="photo-grid"
-      aria-live="polite"
-    ></div>
-
-
-    <div
-      id="empty-state"
-      class="empty-state"
-      hidden
-    >
-
-      <strong>
-        No photos yet
-      </strong>
-
-      <span>
-        Photos saved to the current event will appear here.
-      </span>
-
-      <a
-        class="toolbar-button primary"
-        href="capture.html"
-      >
-        Take a photo
-      </a>
-
+    <div id="photo-grid" class="photo-grid" aria-live="polite"></div>
+    <div id="empty-state" class="empty-state" hidden>
+      <strong>No photos yet</strong>
+      <span>Photos you capture will appear here.</span>
+      <a class="toolbar-button primary" href="capture.html">Take a photo</a>
     </div>
-
   </main>
 
-
-  <dialog
-    id="photo-preview-dialog"
-    aria-label="Photo preview"
-  >
-
-    <img
-      id="photo-preview-image"
-      alt="Full-size photo preview"
-    >
-
+  <dialog id="photo-preview-dialog" aria-label="Photo preview">
+    <img id="photo-preview-image" alt="Full-size photo preview">
   </dialog>
 
+  <script>
+    const DB_NAME = 'lumabooth_db';
+    const DB_VERSION = 2;
+    const PHOTO_ASSET_STORE = 'photo_assets';
+    const LATEST_PHOTO_ID = 'last-captured-photo';
 
-  <!-- ========================================================
-       SUPABASE GALLERY
-       ======================================================== -->
-
-  <script type="module">
-
-    import {
-      getEventPhotos
-    } from './supabase.js';
-
-
-    const ACTIVE_EVENT_KEY =
-      'lumabooth_active_event_v1';
-
-
+    let photoDatabase = null;
     let photos = [];
 
-
-    // ==========================================================
-    // GET ACTIVE EVENT
-    // ==========================================================
-
-    function getActiveEvent() {
-
-      try {
-
-        const raw =
-          localStorage.getItem(
-            ACTIVE_EVENT_KEY
-          );
-
-        if (!raw) {
-          return null;
-        }
-
-        return JSON.parse(raw);
-
-      } catch (error) {
-
-        console.error(
-          'Could not read active event:',
-          error
-        );
-
-        return null;
-
-      }
-
+    function openPhotoDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('templates')) db.createObjectStore('templates', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('design_drafts')) db.createObjectStore('design_drafts', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains(PHOTO_ASSET_STORE)) db.createObjectStore(PHOTO_ASSET_STORE, { keyPath: 'id' });
+        };
+        request.onerror = () => reject(request.error || new Error('Photo storage could not be opened.'));
+        request.onsuccess = () => resolve(request.result);
+      });
     }
 
-
-    // ==========================================================
-    // FORMAT DATE
-    // ==========================================================
-
-    function formatPhotoDate(
-      timestamp
-    ) {
-
-      if (!timestamp) {
-        return 'Unknown date';
-      }
-
-      return new Intl.DateTimeFormat(
-        undefined,
-        {
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        }
-      ).format(
-        new Date(timestamp)
-      );
-
+    function loadPhotos() {
+      return new Promise((resolve, reject) => {
+        if (!photoDatabase) return reject(new Error('Photo storage is not ready.'));
+        const transaction = photoDatabase.transaction(PHOTO_ASSET_STORE, 'readonly');
+        const request = transaction.objectStore(PHOTO_ASSET_STORE).getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error || new Error('Photos could not be loaded.'));
+      });
     }
-
-
-    // ==========================================================
-    // RENDER PHOTOS
-    // ==========================================================
 
     function renderPhotos() {
-
-      const grid =
-        document.getElementById(
-          'photo-grid'
-        );
-
-      const emptyState =
-        document.getElementById(
-          'empty-state'
-        );
-
-
+      const grid = document.getElementById('photo-grid');
+      const emptyState = document.getElementById('empty-state');
       grid.replaceChildren();
-
-
-      document.getElementById(
-        'photo-count'
-      ).textContent =
-        `${photos.length} ${
-          photos.length === 1
-            ? 'photo'
-            : 'photos'
-        }`;
-
-
-      emptyState.hidden =
-        photos.length > 0;
-
-
-      photos.forEach(
-        (photo) => {
-
-          const card =
-            document.createElement(
-              'article'
-            );
-
-          card.className =
-            'photo-card';
-
-
-          // ----------------------------------------------------
-          // IMAGE BUTTON
-          // ----------------------------------------------------
-
-          const previewButton =
-            document.createElement(
-              'button'
-            );
-
-          previewButton.className =
-            'photo-preview';
-
-          previewButton.type =
-            'button';
-
-
-          const image =
-            document.createElement(
-              'img'
-            );
-
-          image.src =
-            photo.publicUrl;
-
-          image.alt =
-            `Saved photo from ${
-              formatPhotoDate(
-                photo.created_at
-              )
-            }`;
-
-
-          previewButton.appendChild(
-            image
-          );
-
-
-          // ----------------------------------------------------
-          // OPEN SHARE PAGE
-          // ----------------------------------------------------
-
-          previewButton.addEventListener(
-            'click',
-            () => {
-
-              sessionStorage.setItem(
-
-                'lumabooth_selected_share_photo',
-
-                JSON.stringify({
-
-                  id:
-                    photo.id,
-
-                  data:
-                    photo.publicUrl,
-
-                  captureSessionId:
-                    photo.session_id,
-
-                  cameraNumber:
-                    1,
-
-                  eventName:
-                    photo.event_name,
-
-                  imagePath:
-                    photo.image_path
-
-                })
-
-              );
-
-
-              // IMPORTANT:
-              // Do not reuse the previous final result.
-
-              sessionStorage.removeItem(
-                'lumabooth_final_photo_result_v1'
-              );
-
-              sessionStorage.removeItem(
-                'lumabooth_cloud_upload_error_v1'
-              );
-
-              sessionStorage.removeItem(
-                'lumabooth_cloud_upload_failures_v1'
-              );
-
-
-              window.location.href =
-                'share.html';
-
-            }
-          );
-
-
-          // ----------------------------------------------------
-          // INFORMATION
-          // ----------------------------------------------------
-
-          const info =
-            document.createElement(
-              'div'
-            );
-
-          info.className =
-            'photo-info';
-
-
-          const date =
-            document.createElement(
-              'div'
-            );
-
-          date.className =
-            'photo-date';
-
-          date.textContent =
-            formatPhotoDate(
-              photo.created_at
-            );
-
-
-          // ----------------------------------------------------
-          // ACTIONS
-          // ----------------------------------------------------
-
-          const actions =
-            document.createElement(
-              'div'
-            );
-
-          actions.className =
-            'photo-actions';
-
-
-          const download =
-            document.createElement(
-              'a'
-            );
-
-          download.href =
-            photo.publicUrl;
-
-          download.target =
-            '_blank';
-
-          download.rel =
-            'noopener';
-
-          download.download =
-            `lumabooth-${photo.id}.jpg`;
-
-          download.textContent =
-            'Download';
-
-
-          actions.append(
-            download
-          );
-
-
-          info.append(
-            date,
-            actions
-          );
-
-
-          card.append(
-            previewButton,
-            info
-          );
-
-
-          grid.appendChild(
-            card
-          );
-
-        }
-      );
-
+      document.getElementById('photo-count').textContent = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`;
+      emptyState.hidden = photos.length > 0;
+
+      photos.forEach((photo) => {
+        const card = document.createElement('article');
+        card.className = 'photo-card';
+
+        const previewButton = document.createElement('button');
+        previewButton.className = 'photo-preview';
+        previewButton.type = 'button';
+        previewButton.setAttribute('aria-label', `Preview photo from ${formatPhotoDate(photo.capturedAt)}`);
+        const image = document.createElement('img');
+        image.src = photo.data;
+        image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
+        previewButton.appendChild(image);
+        previewButton.addEventListener('click', () => {
+  // Store the selected photo AND its capture session.
+  // All photos taken in the same 3-photo capture
+  // have the same captureSessionId.
+  sessionStorage.setItem(
+    'lumabooth_selected_share_photo',
+    JSON.stringify({
+      id: photo.id,
+      data: photo.data,
+      captureSessionId: photo.captureSessionId || null,
+      cameraNumber: photo.cameraNumber || 1
+    })
+  );
+
+  // IMPORTANT:
+  // Clear the previous final rendered photo.
+  // Otherwise share.html may reuse the old result.
+  sessionStorage.removeItem(
+    'lumabooth_final_photo_result_v1'
+  );
+
+  sessionStorage.removeItem(
+    'lumabooth_cloud_upload_error_v1'
+  );
+
+  sessionStorage.removeItem(
+    'lumabooth_cloud_upload_failures_v1'
+  );
+
+  window.location.href = 'share.html';
+});
+
+        const info = document.createElement('div');
+        info.className = 'photo-info';
+        const date = document.createElement('div');
+        date.className = 'photo-date';
+        date.textContent = formatPhotoDate(photo.capturedAt);
+
+        const actions = document.createElement('div');
+        actions.className = 'photo-actions';
+        const download = document.createElement('a');
+        download.href = photo.data;
+        download.download = `lumabooth-${photo.id}.png`;
+        download.textContent = 'Download';
+        const remove = document.createElement('button');
+        remove.className = 'delete-photo';
+        remove.type = 'button';
+        remove.textContent = 'Delete';
+        remove.addEventListener('click', () => deletePhoto(photo));
+
+        actions.append(download, remove);
+        info.append(date, actions);
+        card.append(previewButton, info);
+        grid.appendChild(card);
+      });
     }
 
-
-    // ==========================================================
-    // LOAD FROM SUPABASE DATABASE
-    // ==========================================================
-
-    async function loadGallery() {
-
-      const countElement =
-        document.getElementById(
-          'photo-count'
-        );
-
-
-      countElement.textContent =
-        'Loading photos...';
-
-
-      try {
-
-        const activeEvent =
-          getActiveEvent();
-
-
-        if (
-          !activeEvent ||
-          !activeEvent.name
-        ) {
-
-          throw new Error(
-            'No active event found. Please launch an event first.'
-          );
-
-        }
-
-
-        console.log(
-          'Loading Gallery from Supabase:',
-          activeEvent.name
-        );
-
-
-        // IMPORTANT:
-        // This comes from the `photos` DATABASE TABLE.
-        // It does NOT load IndexedDB.
-
-        photos =
-          await getEventPhotos(
-            activeEvent.name
-          );
-
-
-        renderPhotos();
-
-
-      } catch (error) {
-
-        console.error(
-          'Gallery loading error:',
-          error
-        );
-
-
-        photos = [];
-
-
-        countElement.textContent =
-          'Could not load photos';
-
-
-        const emptyState =
-          document.getElementById(
-            'empty-state'
-          );
-
-
-        emptyState.hidden =
-          false;
-
-
-        const message =
-          emptyState.querySelector(
-            'span'
-          );
-
-
-        message.textContent =
-          error.message ||
-          'Could not connect to the photo database.';
-
-      }
-
+    function formatPhotoDate(timestamp) {
+      return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+        .format(new Date(timestamp));
     }
 
+    function showPhotoPreview(source) {
+      document.getElementById('photo-preview-image').src = source;
+      document.getElementById('photo-preview-dialog').showModal();
+    }
 
-    // ==========================================================
-    // FULL SCREEN PREVIEW
-    // ==========================================================
-
-    document
-      .getElementById(
-        'photo-preview-dialog'
-      )
-      .addEventListener(
-        'click',
-        (event) => {
-
-          if (
-            event.target ===
-            event.currentTarget
-          ) {
-
-            event.currentTarget.close();
-
+    async function deletePhoto(photo) {
+      if (!window.confirm('Delete this photo from the gallery?')) return;
+      const transaction = photoDatabase.transaction(PHOTO_ASSET_STORE, 'readwrite');
+      const store = transaction.objectStore(PHOTO_ASSET_STORE);
+      store.delete(photo.id);
+      const latestRequest = store.get(LATEST_PHOTO_ID);
+      latestRequest.onsuccess = () => {
+        if (latestRequest.result?.galleryRecordId === photo.id) {
+          const replacement = photos.find((item) => item.id !== photo.id);
+          if (replacement) {
+            store.put({ id: LATEST_PHOTO_ID, galleryRecordId: replacement.id, capturedAt: replacement.capturedAt });
+          } else {
+            store.delete(LATEST_PHOTO_ID);
           }
-
         }
-      );
-
-
-    // ==========================================================
-    // START
-    // ==========================================================
-
-    window.addEventListener(
-      'DOMContentLoaded',
-      loadGallery
-    );
-
-
-    // ==========================================================
-    // BACK
-    // ==========================================================
-
-    window.goBackToBooth =
-      function () {
-
-        if (history.length > 1) {
-
-          history.back();
-
-        } else {
-
-          window.location.href =
-            'template.html';
-
-        }
-
       };
+      transaction.oncomplete = async () => {
+        photos = photos.filter((item) => item.id !== photo.id);
+        renderPhotos();
+      };
+      transaction.onerror = () => {
+        document.getElementById('photo-count').textContent = 'Could not delete photo';
+      };
+    }
 
+    async function goBackToBooth() {
+      if (history.length > 1) history.back();
+      else window.location.href = 'template.html';
+    }
+
+    document.getElementById('photo-preview-dialog').addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) event.currentTarget.close();
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        photoDatabase = await openPhotoDatabase();
+        photos = (await loadPhotos())
+          .filter((photo) => photo.id !== LATEST_PHOTO_ID && photo.data)
+          .sort((first, second) => second.capturedAt - first.capturedAt);
+        renderPhotos();
+      } catch(error) {
+        document.getElementById('photo-count').textContent = 'Photo storage unavailable';
+        document.getElementById('empty-state').hidden = false;
+        document.querySelector('#empty-state span').textContent = error.message;
+      }
+    });
   </script>
-
-
   <script src="kiosk-lock.js"></script>
-
 </body>
-
 </html>
