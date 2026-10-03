@@ -281,33 +281,33 @@
         card.className = 'photo-card';
 
         const previewButton = document.createElement('button');
-        previewButton.className = 'photo-preview';
-        previewButton.type = 'button';
-        previewButton.setAttribute('aria-label', `Preview photo from ${formatPhotoDate(photo.capturedAt)}`);
-        const image = document.createElement('img');
-        image.src = photo.data;
-        image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
-        previewButton.appendChild(image);
-        previewButton.addEventListener('click', () => {
-  sessionStorage.setItem('lumabooth_selected_share_photo', photo.data);
+previewButton.className = 'photo-preview';
+previewButton.type = 'button';
 
-  // Keep the currently selected template
-  if (selectedPhoto) {
-  document.getElementById('share-image').src = selectedPhoto;
-}
+previewButton.setAttribute(
+  'aria-label',
+  `Preview photo from ${formatPhotoDate(photo.capturedAt)}`
+);
 
-  if (selectedTemplate) {
-    sessionStorage.setItem(
-      'lumabooth_selected_share_template',
-      selectedTemplate
-    );
-  }
+const image = document.createElement('img');
+image.src = photo.data;
+image.alt = `Captured photo from ${formatPhotoDate(photo.capturedAt)}`;
 
+previewButton.appendChild(image);
+
+previewButton.addEventListener('click', () => {
+  // Save the selected gallery photo
+  sessionStorage.setItem(
+    'lumabooth_selected_share_photo',
+    photo.data
+  );
+
+  // Open Share page
   window.location.href = 'share.html';
 });
 
-        const info = document.createElement('div');
-        info.className = 'photo-info';
+const info = document.createElement('div');
+info.className = 'photo-info';
         const date = document.createElement('div');
         date.className = 'photo-date';
         date.textContent = formatPhotoDate(photo.capturedAt);
